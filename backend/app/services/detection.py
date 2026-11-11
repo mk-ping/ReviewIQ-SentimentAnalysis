@@ -63,7 +63,7 @@ def value_score(p: Profile, role: str) -> float:
     if role == "date":
         return 0.95 if p.date_share >= 0.8 else (p.date_share if p.date_share >= 0.5 else 0.0)
     if role == "product":
-        return 0.7 if p.avg_len <= 60 and p.distinct >= 1 and p.unique_ratio < 0.5 and p.numeric_share < 0.3 else 0.0
+        return 0.7 if p.avg_len <= 60 and p.distinct >= 1 and (p.unique_ratio < 0.5 or (p.n <= 10 and p.distinct < len(p.values))) and p.numeric_share < 0.3 else 0.0
     if role == "title":
         return 0.6 if 1 <= p.avg_words <= 10 and p.numeric_share < 0.3 and p.unique_ratio > 0.5 else 0.0
     if role == "helpful":
@@ -99,7 +99,7 @@ def combine(h: float, v: float) -> float:
     if h == 0:
         return v * 0.8
     if v == 0:
-        return h * 0.45
+        return 0.6 if h >= 0.95 else h * 0.45
     return min(1.0, 0.45 * h + 0.55 * v + 0.1 * min(h, v))
 
 
@@ -109,6 +109,8 @@ def score_all(profiles: list[Profile]) -> dict[str, list[Candidate]]:
         for p in profiles:
             h, hit = header_score(p.name, role)
             v = value_score(p, role)
+            if role == "title" and h == 0:
+                v = 0.0  # a title needs header evidence; values alone are too easy to confuse with product
             table[role].append(Candidate(p.name, combine(h, v), hit, h, v))
         table[role].sort(key=lambda c: c.score, reverse=True)
     return table
