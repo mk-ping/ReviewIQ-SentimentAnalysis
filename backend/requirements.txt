@@ -11,3 +11,4 @@ chardet
 lingua-language-detector
 torch
 transformers
+numpy

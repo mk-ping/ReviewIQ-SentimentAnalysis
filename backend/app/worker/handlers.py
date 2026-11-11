@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models import MLModel, Prediction, Review
 from app.services import sentiment
+from app.services.fusion import score_batch
 from app.services.queue import set_progress
 
 CHUNK = 32
@@ -48,6 +49,9 @@ async def handle_score(job_id: int, batch_id: int) -> None:
             await s.execute(pg_insert(Prediction).on_conflict_do_nothing(index_elements=["review_id", "model_id"]), rows)
             await s.commit()
             await set_progress(s, job_id, int(100 * min(i + CHUNK, total) / total))
+
+    async with SessionLocal() as s:
+        await score_batch(s, batch_id)
 
 
 HANDLERS = {"score": handle_score}
