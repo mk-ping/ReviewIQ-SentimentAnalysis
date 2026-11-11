@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: reviewiq
       POSTGRES_DB: reviewiq
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5442:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
