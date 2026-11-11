@@ -1,14 +1,38 @@
+import hashlib
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
-from app.models import ColumnMapping, ColumnProfile, IngestIssue, RawReviewStaging, UploadBatch
-from app.services.detection import assign
+from app.models import (
+    ColumnMapping, ColumnProfile, IngestIssue, RawReviewStaging, SourceTemplate, UploadBatch,
+)
+from app.services.detection import ROLES, RoleResult, assign
 from app.services.profiling import profile_column
 from app.services.structure import repair
 
 router = APIRouter(prefix="/uploads", tags=["mapping"])
+
+
+def header_fingerprint(header: list[str]) -> str:
+    return hashlib.sha256(
+        "|".join(re.sub(r"\s+", " ", h.lower().strip()) for h in header).encode("utf-8")
+    ).hexdigest()
+
+
+def results_from_template(mapping: dict[str, str]) -> list[RoleResult]:
+    out = []
+    for role in ROLES:
+        col = mapping.get(role)
+        if col:
+            out.append(RoleResult(role=role, column=col, confidence=1.0, method="template",
+                                  evidence={"source": "template"}, alternatives=[], action="accept"))
+        else:
+            out.append(RoleResult(role=role, column=None, confidence=0.0, method="none", evidence={},
+                                  alternatives=[], action="missing" if role == "text" else "none"))
+    return out
 
 
 async def load_table(session: AsyncSession, batch_id: int):
@@ -37,7 +61,21 @@ async def get_mapping(batch_id: int, session: AsyncSession = Depends(get_session
         raise HTTPException(422, "The file has a header but no data rows.")
 
     profiles = [profile_column(name, [r[i] for r in data]) for i, name in enumerate(header)]
-    results = assign(profiles)
+
+    template = (
+        await session.execute(
+            select(SourceTemplate).where(
+                SourceTemplate.workspace_id == batch.workspace_id,
+                SourceTemplate.fingerprint == header_fingerprint(header),
+            )
+        )
+    ).scalar_one_or_none()
+    use_template = (
+        template is not None
+        and "text" in template.mapping
+        and all(col in header for col in template.mapping.values())
+    )
+    results = results_from_template(template.mapping) if use_template else assign(profiles)
 
     text_result = next(r for r in results if r.role == "text")
 
@@ -79,11 +117,12 @@ async def get_mapping(batch_id: int, session: AsyncSession = Depends(get_session
         "batch_id": batch_id,
         "columns": header,
         "data_rows": len(data),
+        "from_template": use_template,
         "repairs": [{"row_no": i["row_no"], "problem": i["problem"]} for i in issues],
         "needs_confirmation": any(r.action == "ask" for r in results),
         "mapping": [
-            {"role": r.role, "column": r.column, "confidence": r.confidence, "action": r.action,
-             "evidence": r.evidence, "alternatives": r.alternatives}
+            {"role": r.role, "column": r.column, "confidence": r.confidence, "method": r.method,
+             "action": r.action, "evidence": r.evidence, "alternatives": r.alternatives}
             for r in results
         ],
         "preview": data[:3],

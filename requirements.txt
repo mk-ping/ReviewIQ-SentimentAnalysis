@@ -1,3 +1,7 @@
 
 ftfy
 ftfy
+
+lingua-language-detector
+
+lingua-language-detector
