@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import IngestIssue, Product, RawReviewStaging, Review, UploadBatch
 from app.services.cleaning import clean_text, content_hash, norm_for_hash, spam_score
 from app.services.detection import ROLES
+from app.services.language import detect_language
 from app.services.parsing import (
     detect_scale, infer_dayfirst, normalize_rating, parse_date_cell, parse_rating_cell,
 )
@@ -128,6 +129,8 @@ async def run_ingest(session: AsyncSession, batch: UploadBatch, mapping: dict[st
                 extra["helpful"] = hv
         if title:
             extra["title"] = title
+        lang, script = detect_language(text)
+        extra["script"] = script
         other = {name: r[i] for i, name in enumerate(header) if name not in used and r[i].strip()}
         if other:
             extra["other"] = other
@@ -136,7 +139,7 @@ async def run_ingest(session: AsyncSession, batch: UploadBatch, mapping: dict[st
             "row_no": rn, "product": product, "text_clean": text,
             "rating_raw": rating_raw or None, "rating_norm": rating_norm, "review_date": rdate,
             "source": (batch.file_name or "")[:100], "content_hash": h,
-            "spam_score": spam_score(text_in, text), "dup_count": 1, "extra": extra,
+            "spam_score": spam_score(text_in, text), "dup_count": 1, "extra": extra, "language": lang,
         }
         seen[h] = entry
         kept.append(entry)
@@ -178,7 +181,7 @@ async def run_ingest(session: AsyncSession, batch: UploadBatch, mapping: dict[st
         payload = [
             {"workspace_id": ws, "product_id": pid[e["product"]], "batch_id": batch.batch_id,
              "text_clean": e["text_clean"], "rating_raw": e["rating_raw"], "rating_norm": e["rating_norm"],
-             "review_date": e["review_date"], "source": e["source"], "content_hash": e["content_hash"],
+             "review_date": e["review_date"], "source": e["source"], "language": e["language"], "content_hash": e["content_hash"],
              "spam_score": e["spam_score"], "dup_count": e["dup_count"], "extra": e["extra"]}
             for e in new
         ]
