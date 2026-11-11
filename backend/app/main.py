@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.uploads import router as uploads_router
 from app.core.config import settings
 from app.db.session import get_session
 
-app = FastAPI(title=settings.app_name, version="0.1.0")
+app = FastAPI(title=settings.app_name, version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,6 +15,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(uploads_router)
+
+
+@app.get("/")
+async def root():
+    return {"app": settings.app_name, "docs": "/docs", "health": "/health"}
 
 
 @app.get("/health")

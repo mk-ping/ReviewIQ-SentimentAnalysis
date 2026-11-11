@@ -5,3 +5,6 @@ asyncpg
 alembic
 pydantic-settings
 python-multipart
+
+openpyxl
+chardet
