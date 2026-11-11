@@ -91,13 +91,17 @@ def detect(data: bytes) -> Detected:
 
     lines = [ln for ln in text.splitlines() if ln.strip()]
 
-    if lines and all(ln.lstrip().startswith("{") for ln in lines[:20]):
-        try:
-            for ln in lines[:20]:
-                json.loads(ln)
+    if lines and lines[0].lstrip().startswith("{"):
+        sample = lines[:50]
+        good = 0
+        for ln in sample:
+            try:
+                if isinstance(json.loads(ln), dict):
+                    good += 1
+            except ValueError:
+                pass
+        if good >= 1 and good / len(sample) >= 0.5:
             return Detected("jsonl", encoding=enc)
-        except ValueError:
-            pass
 
     if stripped.startswith("<"):
         return Detected("xml", encoding=enc)
