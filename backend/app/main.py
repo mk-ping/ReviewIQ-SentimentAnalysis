@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.ingest import router as ingest_router
+from app.api.mapping import router as mapping_router
 from app.api.uploads import router as uploads_router
 from app.core.config import settings
 from app.db.session import get_session
@@ -17,6 +19,8 @@ app.add_middleware(
 )
 
 app.include_router(uploads_router)
+app.include_router(mapping_router)
+app.include_router(ingest_router)
 
 
 @app.get("/")
