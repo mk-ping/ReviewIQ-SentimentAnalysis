@@ -9,3 +9,5 @@ python-multipart
 openpyxl
 chardet
 lingua-language-detector
+torch
+transformers
