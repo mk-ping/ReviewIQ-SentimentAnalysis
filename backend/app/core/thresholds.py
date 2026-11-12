@@ -19,3 +19,6 @@ GROWTH_MIN = 0.5
 GROWTH_MAX = 2.0
 GAIN_FLOOR = 0.01         # keeps priority above zero when ratings are missing
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+SPIKE_Z = 2.5             # weekly negative-mention count this many standard deviations above its mean raises an alert
+SPIKE_MIN_WEEKS = 4       # earlier weeks of history needed before an alert can fire
