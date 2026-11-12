@@ -166,7 +166,7 @@ async def alerts(session: AsyncSession = Depends(get_session)):
     for name, by in counts.items():
         series = [by.get(x, 0) for x in weeks]
         z = spike_z(series[:-1], series[-1])
-        if z is not None and z > T.SPIKE_Z:
+        if z is not None and z > T.SPIKE_Z and series[-1] >= T.SPIKE_MIN_COUNT:
             out.append({"aspect": name, "week": weeks[-1], "count": series[-1],
                         "usual": round(mean(series[:-1]), 2), "z": round(z, 2)})
     enough = len(weeks) - 1 >= T.SPIKE_MIN_WEEKS

@@ -22,3 +22,5 @@ EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 SPIKE_Z = 2.5             # weekly negative-mention count this many standard deviations above its mean raises an alert
 SPIKE_MIN_WEEKS = 4       # earlier weeks of history needed before an alert can fire
+
+SPIKE_MIN_COUNT = 3       # a weekly count below this never raises an alert, however flat the history

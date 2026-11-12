@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
@@ -75,8 +75,14 @@ async def get_aspects(session: AsyncSession = Depends(get_session)):
     ]}
 
 
+# Skip wrongly starred reviews (overrated AND no positive aspect mention).
+# Mixed reviews such as "great scent, but the pump broke" stay in.
 NOT_OVERRATED = Review.review_id.not_in(
-    select(ReviewScore.review_id).where(ReviewScore.mismatch_type == "overrated")
+    select(ReviewScore.review_id).where(
+        ReviewScore.mismatch_type == "overrated",
+        ~exists().where(ReviewAspect.review_id == ReviewScore.review_id,
+                        ReviewAspect.sentiment >= -T.NEG_MENTION),
+    )
 )
 
 
