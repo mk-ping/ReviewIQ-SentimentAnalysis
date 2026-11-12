@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.actions import router as actions_router
 from app.api.ingest import router as ingest_router
 from app.api.insights import router as insights_router
 from app.api.issues import router as issues_router
@@ -27,6 +28,7 @@ app.include_router(ingest_router)
 app.include_router(insights_router)
 app.include_router(jobs_router)
 app.include_router(issues_router)
+app.include_router(actions_router)
 
 
 @app.get("/")
