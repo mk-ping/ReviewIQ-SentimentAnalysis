@@ -5,6 +5,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./Layout";
 import Home from "./Home";
 import RatingVsText from "./RatingVsText";
+import Problems from "./Problems";
+import Aspects from "./Aspects";
+import Explorer from "./Explorer";
 import "./index.css";
 
 const client = new QueryClient();
@@ -16,6 +19,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="rating-vs-text" element={<RatingVsText />} />
+            <Route path="problems" element={<Problems />} />
+            <Route path="aspects" element={<Aspects />} />
+            <Route path="explorer" element={<Explorer />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>
         </Routes>

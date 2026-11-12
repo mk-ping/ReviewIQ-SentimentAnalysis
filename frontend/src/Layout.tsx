@@ -6,10 +6,10 @@ import { useFilters } from "./store";
 const PAGES = [
   { to: "/", label: "Home", ready: true },
   { to: "/rating-vs-text", label: "Rating vs Text", ready: true },
-  { to: "/problems", label: "Problems and Priorities", ready: false },
-  { to: "/aspects", label: "Aspects", ready: false },
+  { to: "/problems", label: "Problems and Priorities", ready: true },
+  { to: "/aspects", label: "Aspects", ready: true },
   { to: "/trends", label: "Trends and Alerts", ready: false },
-  { to: "/explorer", label: "Review Explorer", ready: false },
+  { to: "/explorer", label: "Review Explorer", ready: true },
   { to: "/upload", label: "Upload and Data", ready: false },
 ];
 
