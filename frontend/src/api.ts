@@ -19,3 +19,20 @@ export type TrueRating = {
   product: string; n: number; low_sample: boolean; shown_avg: number; true_rating: number;
   gap: number; clear_difference: boolean;
 };
+
+export type RatingVsTextData = {
+  n: number; low_sample: boolean; agreement_rate: number | null; mismatches: number;
+  underrated: number; overrated: number; mean_abs_star_gap: number | null; big_gap_share: number | null;
+  by_star: { stars: number; reviews: number; avg_text_stars: number | null }[]; note: string;
+};
+export type MismatchList = {
+  total: number; next_after_id: number | null;
+  items: { review_id: number; product: string; stars: number | null; fused_stars: number | null;
+           predicted_stars: number | null; star_gap: number | null; type: string; text: string }[];
+};
+export type HiddenData = {
+  hidden_reviews: number; rated_4plus_analysed: number; hidden_rate: number | null; low_sample: boolean;
+  blind_spots: { aspect: string; negative_mentions: number; in_4_5_star: number; blind_spot_share: number; low_sample: boolean }[];
+  items: { review_id: number; product: string; stars: number | null; text: string;
+           negative_mentions: { aspect: string; term: string; phrase: string; sentiment: number }[] }[];
+};

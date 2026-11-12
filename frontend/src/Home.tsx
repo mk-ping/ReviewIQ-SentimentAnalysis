@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api, Distribution, Summary, TrueRating } from "./api";
 import Chart from "./Chart";
+import { filterQs, useFilters } from "./store";
 
 const fmt = (x: number | null | undefined, d = 2) => (x == null ? "n/a" : x.toFixed(d));
 
@@ -17,8 +18,10 @@ function Card({ title, value, note, warn }: { title: string; value: string; note
 }
 
 export default function Home() {
-  const s = useQuery({ queryKey: ["summary"], queryFn: () => api<Summary>("/summary") });
-  const d = useQuery({ queryKey: ["distribution"], queryFn: () => api<Distribution>("/distribution") });
+  const f = useFilters();
+  const qs = filterQs(f);
+  const s = useQuery({ queryKey: ["summary", qs], queryFn: () => api<Summary>("/summary" + qs) });
+  const d = useQuery({ queryKey: ["distribution", qs], queryFn: () => api<Distribution>("/distribution" + qs) });
   const t = useQuery({ queryKey: ["true-rating"], queryFn: () => api<{ products: TrueRating[] }>("/true-rating") });
 
   if (s.isLoading || d.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
