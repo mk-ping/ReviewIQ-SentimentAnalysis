@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.ingest import router as ingest_router
 from app.api.insights import router as insights_router
+from app.api.issues import router as issues_router
 from app.api.jobs import router as jobs_router
 from app.api.mapping import router as mapping_router
 from app.api.uploads import router as uploads_router
@@ -25,6 +26,7 @@ app.include_router(mapping_router)
 app.include_router(ingest_router)
 app.include_router(insights_router)
 app.include_router(jobs_router)
+app.include_router(issues_router)
 
 
 @app.get("/")

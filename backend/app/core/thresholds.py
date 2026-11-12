@@ -12,3 +12,10 @@ ASPECT_LLM_CONF = 0.8     # placeholder confidence for LLM-labelled mentions (no
 ASPECT_MIN_CONF = 0.6     # mentions below this are ignored by the aspect views
 NEG_MENTION = -0.25       # sentiment at or below this counts as a negative mention
 HIDDEN_MIN_STARS = 4      # Hidden Dissatisfaction looks inside reviews rated this or higher
+
+ISSUE_DISTANCE = 0.6      # cosine distance below which two complaints join one issue (tune on gold set)
+ISSUE_MIN_REVIEWS = 2     # an issue needs this many distinct reviews (raise to 5 on real data)
+GROWTH_MIN = 0.5
+GROWTH_MAX = 2.0
+GAIN_FLOOR = 0.01         # keeps priority above zero when ratings are missing
+EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"

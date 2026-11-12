@@ -75,6 +75,11 @@ async def get_aspects(session: AsyncSession = Depends(get_session)):
     ]}
 
 
+NOT_OVERRATED = Review.review_id.not_in(
+    select(ReviewScore.review_id).where(ReviewScore.mismatch_type == "overrated")
+)
+
+
 @router.get("/hidden-dissatisfaction")
 async def get_hidden(
     limit: int = Query(50, ge=1, le=200),
@@ -91,14 +96,14 @@ async def get_hidden(
     hidden_ids = (
         select(Review.review_id)
         .join(ReviewAspect, ReviewAspect.review_id == Review.review_id)
-        .where(Review.workspace_id == ws, Review.rating_norm >= T.HIDDEN_MIN_STARS, neg)
+        .where(Review.workspace_id == ws, Review.rating_norm >= T.HIDDEN_MIN_STARS, neg, NOT_OVERRATED)
         .distinct()
     )
     hidden_total = await session.scalar(select(func.count()).select_from(hidden_ids.subquery())) or 0
     scanned = await session.scalar(
         select(func.count()).select_from(Review)
         .join(ReviewAspectRun, ReviewAspectRun.review_id == Review.review_id)
-        .where(Review.workspace_id == ws, Review.rating_norm >= T.HIDDEN_MIN_STARS)
+        .where(Review.workspace_id == ws, Review.rating_norm >= T.HIDDEN_MIN_STARS, NOT_OVERRATED)
     ) or 0
 
     blind = (
@@ -107,7 +112,7 @@ async def get_hidden(
             .select_from(ReviewAspect)
             .join(Aspect, Aspect.aspect_id == ReviewAspect.aspect_id)
             .join(Review, Review.review_id == ReviewAspect.review_id)
-            .where(Review.workspace_id == ws, Review.rating_norm.is_not(None), neg)
+            .where(Review.workspace_id == ws, Review.rating_norm.is_not(None), neg, NOT_OVERRATED)
             .group_by(Aspect.name)
         )
     ).all()

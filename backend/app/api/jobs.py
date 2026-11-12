@@ -53,6 +53,13 @@ async def start_aspects(batch_id: int, redo_fallback: bool = False, session: Asy
     return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
 
 
+@router.post("/uploads/{batch_id}/issues")
+async def start_issues(batch_id: int, session: AsyncSession = Depends(get_session)):
+    await _ready_batch(session, batch_id)
+    job_id, created = await enqueue(session, batch_id, "issues")
+    return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
+
+
 @router.get("/jobs/{job_id}")
 async def get_job(job_id: int, session: AsyncSession = Depends(get_session)):
     job = await session.get(ScoringJob, job_id)

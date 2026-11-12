@@ -18,3 +18,5 @@ transformers
 numpy
 
 httpx
+sentence-transformers
+scikit-learn

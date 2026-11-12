@@ -121,4 +121,15 @@ async def handle_aspects(job_id: int, batch_id: int) -> None:
                 await set_progress(s, job_id, int(100 * i / total))
 
 
-HANDLERS = {"score": handle_score, "aspects": handle_aspects}
+async def handle_issues(job_id: int, batch_id: int) -> None:
+    from app.services.issues import rebuild_issues
+
+    async with SessionLocal() as s:
+        ws = await s.scalar(select(UploadBatch.workspace_id).where(UploadBatch.batch_id == batch_id))
+        await set_progress(s, job_id, 5)
+    async with SessionLocal() as s:
+        n = await rebuild_issues(s, ws)
+    print(f"[issues] {n} issues built for workspace {ws}")
+
+
+HANDLERS = {"score": handle_score, "aspects": handle_aspects, "issues": handle_issues}
