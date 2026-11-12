@@ -12,3 +12,7 @@ lingua-language-detector
 torch
 transformers
 numpy
+
+torch
+transformers
+numpy

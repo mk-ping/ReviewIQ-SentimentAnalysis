@@ -3,10 +3,11 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import SessionLocal, get_session
-from app.models import ScoringJob, UploadBatch
+from app.models import Review, ScoringJob, UploadBatch
 from app.services.queue import enqueue
 
 router = APIRouter(tags=["jobs"])
@@ -24,6 +25,9 @@ async def start_scoring(batch_id: int, session: AsyncSession = Depends(get_sessi
         raise HTTPException(404, "Upload not found.")
     if batch.status != "done":
         raise HTTPException(409, f"This upload is '{batch.status}'. Confirm its column mapping first (PUT /uploads/{batch_id}/mapping).")
+    n = await session.scalar(select(func.count()).select_from(Review).where(Review.batch_id == batch_id)) or 0
+    if n == 0:
+        raise HTTPException(409, "This upload has no reviews to score. Its rows were rejected or already exist from an earlier upload (see GET /uploads/{id}/report).")
     job_id, created = await enqueue(session, batch_id)
     return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
 
