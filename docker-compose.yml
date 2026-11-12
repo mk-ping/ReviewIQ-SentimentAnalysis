@@ -2,6 +2,7 @@ services:
   db:
     image: pgvector/pgvector:pg16
     container_name: reviewiq_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: reviewiq
       POSTGRES_PASSWORD: reviewiq

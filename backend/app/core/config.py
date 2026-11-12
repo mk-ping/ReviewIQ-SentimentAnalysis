@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     max_upload_mb: int = 25
     upload_dir: str = "../data/uploads"
     default_workspace_name: str = "Default workspace"
-    sentiment_model: str = "tabularisai/multilingual-sentiment-analysis"
+    job_demo_delay: float = 1.0
 
     model_config = SettingsConfigDict(env_file=".env")
 

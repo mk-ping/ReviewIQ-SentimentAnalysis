@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from app.db.session import SessionLocal, engine
+from app.db.session import SessionLocal
 from app.services.queue import claim_next, fail, finish, requeue_stale
 from app.worker.handlers import HANDLERS
 

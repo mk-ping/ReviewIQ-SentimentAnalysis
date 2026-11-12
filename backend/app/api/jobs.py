@@ -47,6 +47,8 @@ async def job_events(job_id: int):
         while True:
             async with SessionLocal() as s:
                 job = await s.get(ScoringJob, job_id)
+            if job is None:
+                return
             snap = _snap(job)
             if snap != last:
                 yield f"data: {json.dumps(snap)}\n\n"
