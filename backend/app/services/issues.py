@@ -102,7 +102,7 @@ async def rebuild_issues(session: AsyncSession, ws: int) -> int:
         return 0
 
     names = {aid: name for aid, name in
-             ((a, n) for a, n in (await session.execute(select(Aspect.aspect_id, Aspect.name).where(Aspect.workspace_id == ws))).all())}
+             (await session.execute(select(Aspect.aspect_id, Aspect.name).where(Aspect.workspace_id == ws))).all()}
 
     built = []
     for aid, ms in found:

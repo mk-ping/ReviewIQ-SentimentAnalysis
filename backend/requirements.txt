@@ -15,3 +15,6 @@ numpy
 httpx
 sentence-transformers
 scikit-learn
+
+sentence-transformers
+scikit-learn
