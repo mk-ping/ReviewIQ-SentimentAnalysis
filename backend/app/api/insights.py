@@ -33,7 +33,7 @@ async def get_mismatches(
                ReviewScore.star_gap, ReviewScore.mismatch_type, ReviewScore.confidence, Review.text_clean)
         .join(Review, Review.review_id == ReviewScore.review_id)
         .join(Product, Product.product_id == Review.product_id)
-        .where(Review.workspace_id == ws, ReviewScore.mismatch_type.is_not(None))
+        .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, ReviewScore.mismatch_type.is_not(None))
     )
     if kind:
         base = base.where(ReviewScore.mismatch_type == kind)
@@ -63,7 +63,7 @@ async def get_aspects(session: AsyncSession = Depends(get_session)):
             .select_from(ReviewAspect)
             .join(Aspect, Aspect.aspect_id == ReviewAspect.aspect_id)
             .join(Review, Review.review_id == ReviewAspect.review_id)
-            .where(Review.workspace_id == ws, ReviewAspect.confidence >= T.ASPECT_MIN_CONF)
+            .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, ReviewAspect.confidence >= T.ASPECT_MIN_CONF)
             .group_by(Aspect.name)
             .order_by(func.count().desc())
         )
@@ -102,14 +102,14 @@ async def get_hidden(
     hidden_ids = (
         select(Review.review_id)
         .join(ReviewAspect, ReviewAspect.review_id == Review.review_id)
-        .where(Review.workspace_id == ws, Review.rating_norm >= T.HIDDEN_MIN_STARS, neg, NOT_OVERRATED)
+        .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, Review.rating_norm >= T.HIDDEN_MIN_STARS, neg, NOT_OVERRATED)
         .distinct()
     )
     hidden_total = await session.scalar(select(func.count()).select_from(hidden_ids.subquery())) or 0
     scanned = await session.scalar(
         select(func.count()).select_from(Review)
         .join(ReviewAspectRun, ReviewAspectRun.review_id == Review.review_id)
-        .where(Review.workspace_id == ws, Review.rating_norm >= T.HIDDEN_MIN_STARS, NOT_OVERRATED)
+        .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, Review.rating_norm >= T.HIDDEN_MIN_STARS, NOT_OVERRATED)
     ) or 0
 
     blind = (
@@ -118,7 +118,7 @@ async def get_hidden(
             .select_from(ReviewAspect)
             .join(Aspect, Aspect.aspect_id == ReviewAspect.aspect_id)
             .join(Review, Review.review_id == ReviewAspect.review_id)
-            .where(Review.workspace_id == ws, Review.rating_norm.is_not(None), neg, NOT_OVERRATED)
+            .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, Review.rating_norm.is_not(None), neg, NOT_OVERRATED)
             .group_by(Aspect.name)
         )
     ).all()
