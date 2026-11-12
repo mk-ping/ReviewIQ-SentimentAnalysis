@@ -25,6 +25,11 @@ async def main() -> None:
             if handler is None:
                 raise RuntimeError(f"No handler for stage '{stage}'")
             await handler(job_id, batch_id)
+            try:
+                from app.services.views import refresh_views
+                await refresh_views()
+            except Exception as e:
+                print(f"[worker {me}] view refresh failed (job kept): {e}")
             async with SessionLocal() as s:
                 await finish(s, job_id)
             print(f"[worker {me}] finished job {job_id}")
