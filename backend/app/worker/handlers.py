@@ -1,12 +1,16 @@
 import asyncio
 
-from sqlalchemy import and_, func, select
+import httpx
+from sqlalchemy import and_, func, insert, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.core.aspect_config import CATEGORIES
 from app.core.config import settings
 from app.db.session import SessionLocal
-from app.models import MLModel, Prediction, Review
-from app.services import sentiment
+from app.models import (
+    Aspect, MLModel, Prediction, Review, ReviewAspect, ReviewAspectRun, UploadBatch,
+)
+from app.services import aspects, sentiment
 from app.services.fusion import score_batch
 from app.services.queue import set_progress
 
@@ -62,4 +66,59 @@ async def handle_score(job_id: int, batch_id: int) -> None:
         await score_batch(s, batch_id)
 
 
-HANDLERS = {"score": handle_score}
+async def _aspect_ids(s, workspace_id: int) -> dict[str, int]:
+    await s.execute(
+        pg_insert(Aspect)
+        .values([{"workspace_id": workspace_id, "name": n} for n in CATEGORIES])
+        .on_conflict_do_nothing(index_elements=["workspace_id", "name"])
+    )
+    await s.commit()
+    rows = (await s.execute(select(Aspect.name, Aspect.aspect_id).where(Aspect.workspace_id == workspace_id))).all()
+    return {name: aid for name, aid in rows}
+
+
+async def handle_aspects(job_id: int, batch_id: int) -> None:
+    async with SessionLocal() as s:
+        await set_progress(s, job_id, 0)
+        ws = await s.scalar(select(UploadBatch.workspace_id).where(UploadBatch.batch_id == batch_id))
+        ids = await _aspect_ids(s, ws)
+        pending = (
+            await s.execute(
+                select(Review.review_id, Review.text_clean)
+                .outerjoin(ReviewAspectRun, ReviewAspectRun.review_id == Review.review_id)
+                .where(Review.batch_id == batch_id, ReviewAspectRun.review_id.is_(None))
+                .order_by(Review.review_id)
+            )
+        ).all()
+
+    total = len(pending)
+    if total == 0:
+        return  # every review in this batch was already analysed
+
+    async with httpx.AsyncClient(timeout=settings.llm_timeout) as client:
+        llm_ok = await aspects.llm_available(client)
+        if not llm_ok:
+            print(f"[aspects] LLM '{settings.llm_model}' not available at {settings.llm_url}; using the keyword fallback")
+        async with SessionLocal() as s:
+            await set_progress(s, job_id, 1)
+        for i, (rid, text) in enumerate(pending, start=1):
+            items, method = await aspects.extract(client if llm_ok else None, text)
+            rows = [
+                {"review_id": rid, "aspect_id": ids[it["category"]], "term": it["term"][:200],
+                 "evidence_span": it["evidence_span"], "sentiment": it["sentiment"],
+                 "confidence": it["confidence"], "method": method}
+                for it in items
+            ]
+            async with SessionLocal() as s:
+                if rows:
+                    await s.execute(insert(ReviewAspect), rows)
+                await s.execute(
+                    pg_insert(ReviewAspectRun)
+                    .values(review_id=rid, method=method, n_found=len(rows))
+                    .on_conflict_do_nothing(index_elements=["review_id"])
+                )
+                await s.commit()
+                await set_progress(s, job_id, int(100 * i / total))
+
+
+HANDLERS = {"score": handle_score, "aspects": handle_aspects}

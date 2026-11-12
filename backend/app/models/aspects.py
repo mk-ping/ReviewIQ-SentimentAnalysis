@@ -1,5 +1,8 @@
+from datetime import datetime
+
 from sqlalchemy import (
-    BigInteger, CheckConstraint, Float, ForeignKey, Index, String, Text, UniqueConstraint,
+    BigInteger, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, String, Text,
+    UniqueConstraint, func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -33,3 +36,17 @@ class ReviewAspect(Base):
     sentiment: Mapped[float] = mapped_column(Float)
     confidence: Mapped[float | None] = mapped_column(Float)
     method: Mapped[str] = mapped_column(String(10))
+
+
+class ReviewAspectRun(Base):
+    """One row per review that has been through aspect extraction, even if nothing was found.
+    This is the cache: a review with a row here is never sent to the LLM again."""
+    __tablename__ = "review_aspect_run"
+    __table_args__ = (CheckConstraint("method IN ('llm','keyword')", name="method_valid"),)
+
+    review_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("review.review_id", ondelete="CASCADE"), primary_key=True
+    )
+    method: Mapped[str] = mapped_column(String(10))
+    n_found: Mapped[int] = mapped_column(Integer, server_default="0")
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

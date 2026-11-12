@@ -3,11 +3,11 @@ import json
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import SessionLocal, get_session
-from app.models import Review, ScoringJob, UploadBatch
+from app.models import Review, ReviewAspect, ReviewAspectRun, ScoringJob, UploadBatch
 from app.services.queue import enqueue
 
 router = APIRouter(tags=["jobs"])
@@ -18,8 +18,7 @@ def _snap(j: ScoringJob) -> dict:
             "progress": j.progress, "attempts": j.attempts, "error": j.error}
 
 
-@router.post("/uploads/{batch_id}/score")
-async def start_scoring(batch_id: int, session: AsyncSession = Depends(get_session)):
+async def _ready_batch(session: AsyncSession, batch_id: int) -> UploadBatch:
     batch = await session.get(UploadBatch, batch_id)
     if batch is None:
         raise HTTPException(404, "Upload not found.")
@@ -28,7 +27,29 @@ async def start_scoring(batch_id: int, session: AsyncSession = Depends(get_sessi
     n = await session.scalar(select(func.count()).select_from(Review).where(Review.batch_id == batch_id)) or 0
     if n == 0:
         raise HTTPException(409, "This upload has no reviews to score. Its rows were rejected or already exist from an earlier upload (see GET /uploads/{id}/report).")
-    job_id, created = await enqueue(session, batch_id)
+    return batch
+
+
+@router.post("/uploads/{batch_id}/score")
+async def start_scoring(batch_id: int, session: AsyncSession = Depends(get_session)):
+    await _ready_batch(session, batch_id)
+    job_id, created = await enqueue(session, batch_id, "score")
+    return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
+
+
+@router.post("/uploads/{batch_id}/aspects")
+async def start_aspects(batch_id: int, redo_fallback: bool = False, session: AsyncSession = Depends(get_session)):
+    await _ready_batch(session, batch_id)
+    if redo_fallback:
+        kw = (
+            select(ReviewAspectRun.review_id)
+            .join(Review, Review.review_id == ReviewAspectRun.review_id)
+            .where(Review.batch_id == batch_id, ReviewAspectRun.method == "keyword")
+        )
+        await session.execute(delete(ReviewAspect).where(ReviewAspect.review_id.in_(kw)))
+        await session.execute(delete(ReviewAspectRun).where(ReviewAspectRun.review_id.in_(kw)))
+        await session.commit()
+    job_id, created = await enqueue(session, batch_id, "aspects")
     return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
 
 

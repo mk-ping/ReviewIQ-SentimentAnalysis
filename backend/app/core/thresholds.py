@@ -7,3 +7,8 @@ SPAM_MAX = 0.6            # reviews above this spam score are left out of True R
 TRUE_RATING_M = 30        # smoothing, same as the weighted rating
 LOW_SAMPLE = 30           # UI warns below this many reviews
 BOOTSTRAP_N = 500
+
+ASPECT_LLM_CONF = 0.8     # placeholder confidence for LLM-labelled mentions (not calibrated)
+ASPECT_MIN_CONF = 0.6     # mentions below this are ignored by the aspect views
+NEG_MENTION = -0.25       # sentiment at or below this counts as a negative mention
+HIDDEN_MIN_STARS = 4      # Hidden Dissatisfaction looks inside reviews rated this or higher
