@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models import MLModel, Prediction, Review
 from app.services import sentiment
+from app.services.fusion import score_batch
 from app.services.queue import set_progress
 
 CHUNK = 32
@@ -41,24 +42,24 @@ async def handle_score(job_id: int, batch_id: int) -> None:
         ).all()
 
     total = len(pending)
-    if total == 0:
-        return  # everything was scored already; nothing to do
-
-    await asyncio.to_thread(sentiment.load)
-    async with SessionLocal() as s:
-        await set_progress(s, job_id, 1)
-
-    for i in range(0, total, CHUNK):
-        part = pending[i : i + CHUNK]
-        results = await asyncio.to_thread(sentiment.predict, [t for _, t in part])
-        rows = [
-            {"review_id": rid, "model_id": mid, "p_neg": a, "p_neu": b, "p_pos": c, "expected_stars": e}
-            for (rid, _), (a, b, c, e) in zip(part, results)
-        ]
+    if total:
+        await asyncio.to_thread(sentiment.load)
         async with SessionLocal() as s:
-            await s.execute(pg_insert(Prediction).on_conflict_do_nothing(index_elements=["review_id", "model_id"]), rows)
-            await s.commit()
-            await set_progress(s, job_id, int(100 * min(i + CHUNK, total) / total))
+            await set_progress(s, job_id, 1)
+        for i in range(0, total, CHUNK):
+            part = pending[i : i + CHUNK]
+            results = await asyncio.to_thread(sentiment.predict, [t for _, t in part])
+            rows = [
+                {"review_id": rid, "model_id": mid, "p_neg": a, "p_neu": b, "p_pos": c, "expected_stars": e}
+                for (rid, _), (a, b, c, e) in zip(part, results)
+            ]
+            async with SessionLocal() as s:
+                await s.execute(pg_insert(Prediction).on_conflict_do_nothing(index_elements=["review_id", "model_id"]), rows)
+                await s.commit()
+                await set_progress(s, job_id, int(100 * min(i + CHUNK, total) / total))
+
+    async with SessionLocal() as s:
+        await score_batch(s, batch_id)
 
 
 HANDLERS = {"score": handle_score}
