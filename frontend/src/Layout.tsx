@@ -10,7 +10,7 @@ const PAGES = [
   { to: "/aspects", label: "Aspects", ready: true },
   { to: "/trends", label: "Trends and Alerts", ready: false },
   { to: "/explorer", label: "Review Explorer", ready: true },
-  { to: "/upload", label: "Upload and Data", ready: false },
+  { to: "/upload", label: "Upload and Data", ready: true },
 ];
 
 function FilterBar() {

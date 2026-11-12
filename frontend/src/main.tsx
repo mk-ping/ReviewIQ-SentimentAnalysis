@@ -8,6 +8,7 @@ import RatingVsText from "./RatingVsText";
 import Problems from "./Problems";
 import Aspects from "./Aspects";
 import Explorer from "./Explorer";
+import Upload from "./Upload";
 import "./index.css";
 
 const client = new QueryClient();
@@ -22,6 +23,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="problems" element={<Problems />} />
             <Route path="aspects" element={<Aspects />} />
             <Route path="explorer" element={<Explorer />} />
+            <Route path="upload" element={<Upload />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>
         </Routes>
