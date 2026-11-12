@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+﻿import { NavLink, Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, TrueRating } from "./api";
 import { useFilters } from "./store";
@@ -8,6 +8,7 @@ const PAGES = [
   { to: "/rating-vs-text", label: "Rating vs Text", ready: true },
   { to: "/problems", label: "Problems and Priorities", ready: true },
   { to: "/aspects", label: "Aspects", ready: true },
+  { to: "/compare", label: "Products and Competitors", ready: true },
   { to: "/trends", label: "Trends and Alerts", ready: true },
   { to: "/explorer", label: "Review Explorer", ready: true },
   { to: "/upload", label: "Upload and Data", ready: true },
@@ -63,3 +64,4 @@ export default function Layout() {
     </div>
   );
 }
+
