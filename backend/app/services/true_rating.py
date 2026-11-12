@@ -38,7 +38,7 @@ async def true_rating(session: AsyncSession, workspace_id: int = 1) -> list[dict
         out.append({
             "product": name, "n": n, "low_sample": n < T.LOW_SAMPLE,
             "shown_avg": round(shown, 2), "true_rating": round(tr, 2), "gap": round(tr - shown, 2),
-            "ci_low": round(lo, 2), "ci_high": round(hi, 2), "clear_difference": not (lo <= 0 <= hi),
+            "ci_low": round(lo, 2), "ci_high": round(hi, 2), "clear_difference": n >= T.LOW_SAMPLE and not (lo <= 0 <= hi),
             "mismatch_share": round(sum(1 for x in v if x[2]) / n, 2),
         })
     return out
