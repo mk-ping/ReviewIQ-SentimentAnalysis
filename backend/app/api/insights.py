@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import and_, exists, func, select
+from sqlalchemy import and_, exists, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
@@ -114,12 +114,10 @@ async def get_hidden(
 
     blind = (
         await session.execute(
-            select(Aspect.name, func.count(), func.count().filter(Review.rating_norm >= T.HIDDEN_MIN_STARS))
-            .select_from(ReviewAspect)
-            .join(Aspect, Aspect.aspect_id == ReviewAspect.aspect_id)
-            .join(Review, Review.review_id == ReviewAspect.review_id)
-            .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, Review.rating_norm.is_not(None), neg, NOT_OVERRATED)
-            .group_by(Aspect.name)
+            text("SELECT a.name, sum(m.negative_n)::int, sum(m.hidden_n)::int "
+                 "FROM mv_hidden_dissatisfaction m JOIN aspect a ON a.aspect_id = m.aspect_id "
+                 "WHERE m.workspace_id = :ws GROUP BY a.name"),
+            {"ws": ws},
         )
     ).all()
     blind_spots = sorted(

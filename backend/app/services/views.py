@@ -2,7 +2,7 @@ from sqlalchemy import text
 
 from app.db.session import engine
 
-VIEWS = ["mv_product_daily"]
+VIEWS = ["mv_product_daily", "mv_hidden_dissatisfaction"]
 
 
 async def refresh_views() -> None:
