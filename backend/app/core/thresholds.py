@@ -24,3 +24,8 @@ SPIKE_Z = 2.5             # weekly negative-mention count this many standard dev
 SPIKE_MIN_WEEKS = 4       # earlier weeks of history needed before an alert can fire
 
 SPIKE_MIN_COUNT = 3       # a weekly count below this never raises an alert, however flat the history
+
+TIEBREAK_SAMPLE = 300      # rows scored for the rating-vs-votes correlation
+TIEBREAK_TRACKS = 0.3      # Spearman at or above this: the column moves with text sentiment (a rating)
+TIEBREAK_FLAT = 0.15       # |Spearman| below this: unrelated to sentiment (votes, counts)
+TIEBREAK_WEAK_HEADER = 0.8 # only columns chosen with a header score below this are tested

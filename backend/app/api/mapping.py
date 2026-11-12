@@ -2,6 +2,7 @@ import hashlib
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +13,7 @@ from app.models import (
 from app.services.detection import ROLES, RoleResult, assign
 from app.services.profiling import profile_column
 from app.services.structure import repair
+from app.services.tiebreak import apply_tiebreak
 
 router = APIRouter(prefix="/uploads", tags=["mapping"])
 
@@ -76,6 +78,8 @@ async def get_mapping(batch_id: int, session: AsyncSession = Depends(get_session
         and all(col in header for col in template.mapping.values())
     )
     results = results_from_template(template.mapping) if use_template else assign(profiles)
+    if not use_template:
+        await run_in_threadpool(apply_tiebreak, results, profiles, header, data)
 
     text_result = next(r for r in results if r.role == "text")
 
