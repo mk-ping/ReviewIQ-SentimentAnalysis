@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api, ReviewPage } from "./api";
+import Similar from "./Similar";
 import { useFilters } from "./store";
 
 export default function Explorer() {
@@ -72,6 +73,7 @@ export default function Explorer() {
                 </span>
               </div>
               <p className="mt-1">{body}</p>
+              <Similar id={r.review_id} />
               {r.negative_phrases.length > 0 && (
                 <p className="mt-1 text-xs text-slate-500">Complaints: {r.negative_phrases.map((n) => n.aspect).join(", ")}</p>
               )}

@@ -6,11 +6,12 @@ from app.models.ingest import (
 )
 from app.models.issues import Issue, IssuePriority, IssueReview
 from app.models.ops import ScoringJob
+from app.models.search import AuditLog, ReviewEmbedding
 from app.models.scoring import MLModel, Prediction, ReviewScore
 from app.models.tenancy import AppUser, Workspace
 
 __all__ = [
     "Action", "Aspect", "ReviewAspect", "ReviewAspectRun", "Brand", "Product", "Review", "ColumnMapping",
     "ColumnProfile", "IngestIssue", "RawReviewStaging", "SourceTemplate", "UploadBatch", "MLModel",
-    "Prediction", "ReviewScore", "AppUser", "Workspace", "ScoringJob", "Issue", "IssueReview", "IssuePriority",
+    "Prediction", "ReviewScore", "AppUser", "Workspace", "ScoringJob", "ReviewEmbedding", "AuditLog", "Issue", "IssueReview", "IssuePriority",
 ]

@@ -60,6 +60,13 @@ async def start_issues(batch_id: int, session: AsyncSession = Depends(get_sessio
     return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
 
 
+@router.post("/uploads/{batch_id}/embed")
+async def start_embed(batch_id: int, session: AsyncSession = Depends(get_session)):
+    await _ready_batch(session, batch_id)
+    job_id, created = await enqueue(session, batch_id, "embed")
+    return {"job_id": job_id, "created": created, "events": f"/jobs/{job_id}/events"}
+
+
 @router.get("/jobs/{job_id}")
 async def get_job(job_id: int, session: AsyncSession = Depends(get_session)):
     job = await session.get(ScoringJob, job_id)

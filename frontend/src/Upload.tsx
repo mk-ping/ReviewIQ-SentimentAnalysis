@@ -46,6 +46,7 @@ const STAGES: [string, string, string][] = [
   ["score", "Reading sentiment", "score"],
   ["aspects", "Finding aspects", "aspects"],
   ["issues", "Grouping problems", "issues"],
+  ["embed", "Indexing for similar-review search", "embed"],
 ];
 
 export default function Upload() {

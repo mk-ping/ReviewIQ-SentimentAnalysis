@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from statistics import mean, pstdev
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -139,6 +139,25 @@ async def reviews(product: str | None = None, min_rating: float | None = None, m
               "fused_stars": _f(fs), "mismatch": mt, "negative_phrases": phrases.get(i, [])}
              for i, pn, st, d, lg, tx, tl, fs, mt in rows]
     return {"items": items, "next_after_id": ids[-1] if len(ids) == limit else None}
+
+
+@router.get("/reviews/similar/{review_id}")
+async def similar_reviews(review_id: int, limit: int = Query(5, ge=1, le=20), session: AsyncSession = Depends(get_session)):
+    ws = await _ws(session)
+    src = (await session.execute(text("""
+        SELECT e.embedding::text FROM review_embedding e JOIN review r ON r.review_id = e.review_id
+        WHERE e.review_id = :id AND r.workspace_id = :ws"""), {"id": review_id, "ws": ws})).scalar()
+    if src is None:
+        raise HTTPException(409, "This review has no embedding yet. Run the analysis (embed stage) for its upload first.")
+    await session.execute(text("SET LOCAL hnsw.ef_search = 100"))
+    rows = (await session.execute(text("""
+        SELECT r.review_id, p.name, r.rating_norm, r.text_clean, 1 - (e.embedding <=> CAST(:q AS vector)) AS similarity
+        FROM review_embedding e JOIN review r ON r.review_id = e.review_id JOIN product p ON p.product_id = r.product_id
+        WHERE e.review_id <> :id AND r.workspace_id = :ws
+        ORDER BY e.embedding <=> CAST(:q AS vector) LIMIT :lim"""), {"q": src, "id": review_id, "ws": ws, "lim": limit})).all()
+    return {"source": review_id, "items": [
+        {"review_id": i, "product": pn, "stars": st, "text": tx, "similarity": _f(sim, 3)} for i, pn, st, tx, sim in rows],
+        "note": "Nearest reviews by meaning (cosine similarity on sentence embeddings, HNSW index). Similar wording is not proof of the same problem."}
 
 
 @router.get("/alerts")

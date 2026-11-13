@@ -132,4 +132,31 @@ async def handle_issues(job_id: int, batch_id: int) -> None:
     print(f"[issues] {n} issues built for workspace {ws}")
 
 
-HANDLERS = {"score": handle_score, "aspects": handle_aspects, "issues": handle_issues}
+async def handle_embed(job_id: int, batch_id: int) -> None:
+    """Embed review text for similar-review search. Idempotent: only reviews without a current embedding are processed."""
+    from sqlalchemy import text as sql
+    from app.core import thresholds as T
+    from app.services.embeddings import embed
+
+    async with SessionLocal() as s:
+        await set_progress(s, job_id, 0)
+        pending = (await s.execute(sql("""
+            SELECT r.review_id, r.text_clean FROM review r
+            LEFT JOIN review_embedding e ON e.review_id = r.review_id
+            WHERE r.batch_id = :b AND (e.review_id IS NULL OR e.model <> :m) ORDER BY r.review_id"""),
+            {"b": batch_id, "m": T.EMBED_MODEL})).all()
+    total = len(pending)
+    for i in range(0, total, CHUNK):
+        part = pending[i : i + CHUNK]
+        vectors = await asyncio.to_thread(embed, [t or "" for _, t in part])
+        rows = [{"rid": rid, "m": T.EMBED_MODEL, "v": "[" + ",".join(f"{float(x):.6f}" for x in vec) + "]"}
+                for (rid, _), vec in zip(part, vectors)]
+        async with SessionLocal() as s:
+            await s.execute(sql("""
+                INSERT INTO review_embedding (review_id, model, embedding) VALUES (:rid, :m, CAST(:v AS vector))
+                ON CONFLICT (review_id) DO UPDATE SET model = EXCLUDED.model, embedding = EXCLUDED.embedding, created_at = now()"""), rows)
+            await s.commit()
+            await set_progress(s, job_id, int(100 * min(i + CHUNK, total) / total))
+
+
+HANDLERS = {"score": handle_score, "aspects": handle_aspects, "issues": handle_issues, "embed": handle_embed}
