@@ -49,6 +49,16 @@ def sniff_delimiter(lines: list[str]) -> str | None:
     return best
 
 
+def looks_like_header(cells: list[str]) -> bool:
+    from app.services.detection import ALIASES, header_score
+
+    hits = 0
+    for c in cells:
+        if len(c) <= 40 and max(header_score(c, r)[0] for r in ALIASES) >= 0.8:
+            hits += 1
+    return hits >= 2
+
+
 def detect(data: bytes) -> Detected:
     if not data.strip():
         return Detected("empty", error="The file is empty.")
@@ -109,6 +119,11 @@ def detect(data: bytes) -> Detected:
     if len(lines) >= 2:
         delim = sniff_delimiter(lines[:50])
         if delim:
+            return Detected("tsv" if delim == "\t" else "csv", encoding=enc, delimiter=delim)
+
+    if len(lines) == 1:
+        delim = sniff_delimiter(lines)
+        if delim and looks_like_header(next(csv.reader(lines, delimiter=delim))):
             return Detected("tsv" if delim == "\t" else "csv", encoding=enc, delimiter=delim)
 
     return Detected("txt", encoding=enc)

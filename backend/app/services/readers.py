@@ -126,7 +126,9 @@ def read_table(data: bytes, det: Detected) -> ReadResult:
     if det.format == "txt":
         return _read_txt(data, det)
     if det.format == "pdf":
-        raise UnsupportedFormat("PDF reading (text, tables and OCR) is added in a later step.")
+        from app.services.readers_extra import read_pdf
+        return read_pdf(data)
     if det.format == "xml":
-        raise UnsupportedFormat("XML reading is added in a later step.")
+        from app.services.readers_extra import read_xml
+        return read_xml(data, det)
     raise UnsupportedFormat(f"Unsupported file type: {det.format}")

@@ -18,3 +18,9 @@ scikit-learn
 
 sentence-transformers
 scikit-learn
+
+pdfplumber
+defusedxml
+pytesseract
+reportlab
+scipy

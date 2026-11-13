@@ -2,15 +2,16 @@ import hashlib
 import re
 
 from fastapi import APIRouter, Depends, HTTPException
-from starlette.concurrency import run_in_threadpool
 from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from app.db.session import get_session
 from app.models import (
     ColumnMapping, ColumnProfile, IngestIssue, RawReviewStaging, SourceTemplate, UploadBatch,
 )
 from app.services.detection import ROLES, RoleResult, assign
+from app.services.llm_mapping import suggest_mapping
 from app.services.profiling import profile_column
 from app.services.structure import repair
 from app.services.tiebreak import apply_tiebreak
@@ -46,6 +47,35 @@ async def load_table(session: AsyncSession, batch_id: int):
     return [r["cells"] for r in rows]
 
 
+async def llm_fallback(results: list[RoleResult], header: list[str], data: list[list[str]]) -> list[str]:
+    """Plan rule: below 0.5 on the required text role, ask the local LLM; validate; still ask the user."""
+    by = {r.role: r for r in results}
+    text = by["text"]
+    if text.column is not None and text.confidence >= 0.5:
+        return []
+    sug = await suggest_mapping(header, data[:5])
+    if not sug:
+        return ["The text column is uncertain and the local LLM gave no usable suggestion."]
+    taken = {r.column for r in results if r.column and r.confidence >= 0.5 and r.role != "text"}
+    changed = []
+    for role, col in sug.items():
+        r = by[role]
+        if col in taken or not (role == "text" or r.column is None):
+            continue
+        for other in results:  # free the column if a weaker role was holding it
+            if other is not r and other.column == col:
+                other.column, other.confidence, other.method = None, 0.0, "none"
+                other.evidence, other.alternatives = {}, []
+                other.action = "missing" if other.role == "text" else "none"
+        r.column, r.confidence, r.method, r.action = col, 0.55, "llm", "ask"
+        r.evidence, r.alternatives = {"source": "llm"}, []
+        taken.add(col)
+        changed.append(f"{role} = {col}")
+    if not changed:
+        return ["The local LLM suggestion matched columns already in use, so it was ignored."]
+    return [f"Local LLM suggested: {', '.join(changed)}. Please confirm."]
+
+
 @router.get("/{batch_id}/mapping")
 async def get_mapping(batch_id: int, session: AsyncSession = Depends(get_session)):
     batch = await session.get(UploadBatch, batch_id)
@@ -78,8 +108,16 @@ async def get_mapping(batch_id: int, session: AsyncSession = Depends(get_session
         and all(col in header for col in template.mapping.values())
     )
     results = results_from_template(template.mapping) if use_template else assign(profiles)
+
+    notes: list[str] = []
     if not use_template:
-        await run_in_threadpool(apply_tiebreak, results, profiles, header, data)
+        try:
+            corrs = await run_in_threadpool(apply_tiebreak, results, profiles, header, data)
+            if corrs:
+                notes.append("Checked against text sentiment: " + ", ".join(f"{k} {v:+.2f}" for k, v in corrs.items()))
+        except Exception as e:  # never crash the mapping call
+            notes.append(f"Sentiment tie-breaker skipped ({type(e).__name__}).")
+        notes += await llm_fallback(results, header, data)
 
     text_result = next(r for r in results if r.role == "text")
 
@@ -123,6 +161,7 @@ async def get_mapping(batch_id: int, session: AsyncSession = Depends(get_session
         "data_rows": len(data),
         "from_template": use_template,
         "repairs": [{"row_no": i["row_no"], "problem": i["problem"]} for i in issues],
+        "notes": notes,
         "needs_confirmation": any(r.action == "ask" for r in results),
         "mapping": [
             {"role": r.role, "column": r.column, "confidence": r.confidence, "method": r.method,

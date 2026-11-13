@@ -14,7 +14,7 @@ from app.services.readers import UnsupportedFormat, read_table
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
-EXT = {"csv": ".csv", "tsv": ".tsv", "xlsx": ".xlsx", "json": ".json", "jsonl": ".jsonl", "txt": ".txt"}
+EXT = {"csv": ".csv", "tsv": ".tsv", "xlsx": ".xlsx", "json": ".json", "jsonl": ".jsonl", "txt": ".txt", "pdf": ".pdf", "xml": ".xml"}
 
 
 async def default_workspace_id(session: AsyncSession) -> int:
@@ -135,6 +135,7 @@ async def create_upload(
         "delimiter": det.delimiter,
         "rows_total": len(result.rows),
         "issues": len(result.issues),
+        "notes": getattr(result, "notes", []),
         "preview": result.rows[:6],
     }
 

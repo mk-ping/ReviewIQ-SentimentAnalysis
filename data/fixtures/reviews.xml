@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<reviews>
+  <review id="1"><product>Lip balm</product><rating>5</rating><text>Smooth and lasting, love it</text><date>14/03/2026</date></review>
+  <review id="2"><product>Lip balm</product><rating>2</rating><text>Melts in the heat and the cap is loose</text><date>18/03/2026</date></review>
+  <review id="3"><product>Face wash</product><rating>4</rating><text>Gentle on skin but the bottle is small</text><date>21/03/2026</date></review>
+  <review id="4"><product>Face wash</product><rating>1</rating><text>Delivery was late and the box was damaged</text><date>25/03/2026</date></review>
+  <review id="5"><product>Face wash</product><rating>5</rating><text>Crème texture is lovely, will buy again</text><date>28/03/2026</date></review>
+  <review id="6"><product>Lip balm</product><rating>3</rating><text>Okay for the price, nothing special</text><date>30/03/2026</date></review>
+</reviews>

@@ -19,3 +19,8 @@ GROWTH_MIN = 0.5
 GROWTH_MAX = 2.0
 GAIN_FLOOR = 0.01         # keeps priority above zero when ratings are missing
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+TIEBREAK_SAMPLE = 300       # rows used to test a column against text sentiment
+TIEBREAK_WEAK_HEADER = 0.6  # a rating or helpful column with a weaker header match gets tested
+TIEBREAK_TRACKS = 0.3       # correlation at or above this: the column moves with sentiment (a rating)
+TIEBREAK_FLAT = 0.1         # correlation within +/- this: the column ignores sentiment (votes, counts)

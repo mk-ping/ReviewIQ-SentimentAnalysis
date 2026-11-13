@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     llm_url: str = "http://127.0.0.1:11434"
     llm_model: str = "qwen2.5:3b"
     llm_timeout: float = 180.0
+    tesseract_cmd: str = ""
 
     model_config = SettingsConfigDict(env_file=".env")
 
