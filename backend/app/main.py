@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.actions import router as actions_router
 from app.api.dashboard import router as dashboard_router
+from app.api.evaluation import router as evaluation_router
 from app.api.explorer import router as explorer_router
 from app.api.ingest import router as ingest_router
 from app.api.insights import router as insights_router
@@ -32,6 +33,7 @@ app.include_router(jobs_router)
 app.include_router(issues_router)
 app.include_router(dashboard_router)
 app.include_router(explorer_router)
+app.include_router(evaluation_router)
 app.include_router(actions_router)
 
 

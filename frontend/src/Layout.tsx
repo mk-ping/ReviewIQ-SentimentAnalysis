@@ -12,6 +12,7 @@ const PAGES = [
   { to: "/trends", label: "Trends and Alerts", ready: true },
   { to: "/explorer", label: "Review Explorer", ready: true },
   { to: "/upload", label: "Upload and Data", ready: true },
+  { to: "/label", label: "Gold Labels and Evaluation", ready: true },
 ];
 
 function FilterBar() {

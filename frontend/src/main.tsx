@@ -10,6 +10,7 @@ import Aspects from "./Aspects";
 import Compare from "./Compare";
 import Explorer from "./Explorer";
 import Upload from "./Upload";
+import Label from "./Label";
 import Trends from "./Trends";
 import "./index.css";
 
@@ -27,6 +28,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="compare" element={<Compare />} />
             <Route path="explorer" element={<Explorer />} />
             <Route path="upload" element={<Upload />} />
+            <Route path="label" element={<Label />} />
             <Route path="trends" element={<Trends />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>
