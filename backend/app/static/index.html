@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewIQ</title>
+<style>
+:root{--bg:#f8fafc;--card:#fff;--text:#0f172a;--mute:#64748b;--line:#e2e8f0;--brand:#4f46e5;--good:#15803d;--bad:#b91c1c;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--mute:#94a3b8;--line:#334155;--brand:#818cf8;--good:#4ade80;--bad:#f87171;--warn:#fbbf24}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;line-height:1.45}
+main{max-width:980px;margin:0 auto;padding:24px 16px}
+h1{margin:0 0 4px;font-size:26px}h2{font-size:17px;margin:0 0 10px}
+.mute{color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi b{display:block;font-size:26px}
+.kpi span{font-size:12px;color:var(--mute)}
+button{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:default}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--mute);font-weight:500}
+td,th{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0}
+select,textarea{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;font-size:14px}
+textarea{width:100%;height:80px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:36px;text-align:center;cursor:pointer}
+.drop.over{border-color:var(--brand)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar>div{height:100%;background:var(--brand);width:0}
+.err{background:rgba(185,28,28,.12);color:var(--bad);padding:10px;border-radius:8px}
+.warn{background:rgba(180,83,9,.12);color:var(--warn);padding:10px;border-radius:8px}
+.good{color:var(--good)}.bad{color:var(--bad)}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;border:1px solid var(--line);font-size:12px;color:var(--mute)}
+mark{background:rgba(185,28,28,.2);color:inherit;border-radius:3px;padding:0 2px}
+.hrow{display:flex;align-items:center;gap:8px;font-size:13px;margin:3px 0}
+.hbar{height:12px;background:var(--brand);border-radius:3px}
+.small{font-size:12px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>ReviewIQ</h1>
+<p class="mute">Upload customer reviews in almost any file format. Get what customers feel, what to fix first, and what the star rating hides.</p>
+<div id="msg"></div>
+<p id="working" class="mute" hidden>Working...</p>
+
+<section class="card" id="s-upload">
+  <div class="drop" id="drop"><b>Drop a file here, or click to choose</b>
+    <div class="mute small">CSV, TSV, Excel, JSON, JSONL, TXT, PDF, XML</div>
+    <input id="file" type="file" hidden accept=".csv,.tsv,.xlsx,.json,.jsonl,.txt,.pdf,.xml"></div>
+  <p class="mute" style="text-align:center">or paste reviews, one per line</p>
+  <textarea id="pasted"></textarea>
+  <p><button id="pastebtn">Use pasted text</button></p>
+</section>
+
+<section class="card" id="s-map" hidden></section>
+<section class="card" id="s-report" hidden></section>
+<section class="card" id="s-run" hidden></section>
+<section id="s-results" hidden></section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f2 = x => x == null ? 'n/a' : Number(x).toFixed(2);
+const ROLES = ['text','rating','date','product','title','helpful','id','author'];
+const HELP = {text:'Review text (required)',rating:'Star rating',date:'Review date',product:'Product name',title:'Review title',helpful:'Helpful votes',id:'Review id',author:'Author'};
+const STAGES = [['score','Reading sentiment'],['aspects','Finding aspects (the slowest step)'],['issues','Grouping problems'],['embed','Indexing for similar-review search']];
+let batch = null, columns = [];
+
+async function call(method, path, body, json) {
+  const r = await fetch(path, {method, body, headers: json ? {'Content-Type':'application/json'} : undefined});
+  let data = null;
+  try { data = await r.json(); } catch (e) {}
+  return {ok: r.ok, status: r.status, data};
+}
+const errText = (d, fb) => typeof (d && d.detail) === 'string' ? d.detail : ((d && d.detail && d.detail.message) || fb);
+const show = (id, on = true) => { $(id).hidden = !on; };
+const busy = on => { $('#working').hidden = !on; document.body.style.cursor = on ? 'progress' : ''; };
+function msg(t, cls = 'err') { $('#msg').innerHTML = t ? '<p class="' + cls + '">' + esc(t) + '</p>' : ''; }
+function resetFlow() { batch = null; ['#s-map','#s-report','#s-run','#s-results'].forEach(i => show(i, false)); msg(''); show('#s-upload'); }
+
+const drop = $('#drop'), fileIn = $('#file');
+drop.onclick = () => fileIn.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
+fileIn.onchange = () => { if (fileIn.files[0]) upload(fileIn.files[0]); fileIn.value = ''; };
+$('#pastebtn').onclick = () => { if ($('#pasted').value.trim()) upload(null); };
+
+async function upload(file) {
+  resetFlow(); busy(true);
+  try {
+    const fd = new FormData();
+    if (file) fd.append('file', file); else fd.append('pasted_text', $('#pasted').value);
+    const u = await call('POST', '/uploads', fd);
+    if (!u.ok) { msg(errText(u.data, 'Upload failed.')); return; }
+    batch = u.data.batch_id;
+    if (u.data.duplicate) msg('This exact file was uploaded before. Showing its earlier state.', 'warn');
+    else if (u.data.notes && u.data.notes.length) msg(u.data.notes.join(' '), 'warn');
+    await loadMapping(batch);
+  } finally { busy(false); }
+}
+
+async function loadMapping(id) {
+  const m = await call('GET', '/uploads/' + id + '/mapping');
+  if (m.status === 422 && m.data && m.data.detail && m.data.detail.columns) {
+    columns = m.data.detail.columns; renderMapping(null); msg(m.data.detail.message, 'warn'); return;
+  }
+  if (!m.ok) { msg(errText(m.data, 'Could not detect columns.')); return; }
+  if (m.data.already_ingested) { await showReport(id); return; }
+  columns = m.data.columns; renderMapping(m.data);
+  if (m.data.notes && m.data.notes.length) msg(m.data.notes.join(' '), 'warn');
+}
+
+function renderMapping(info) {
+  const by = {}; ((info && info.mapping) || []).forEach(m => by[m.role] = m);
+  let h = '<h2>Check the columns</h2><p class="mute">' + (info
+    ? info.data_rows + ' data rows. ' + (info.from_template ? 'A saved template for this layout was reused. ' : '') + (info.needs_confirmation ? 'Some columns need a second look.' : 'This looks right.')
+    : 'No review text column was found automatically. Choose one.') + '</p>';
+  h += '<table id="maptable"><thead><tr><th>What it is</th><th>Column</th><th>Confidence</th></tr></thead><tbody>';
+  for (const role of ROLES) {
+    const m = by[role], sel = m && m.column ? m.column : '';
+    const opts = ['<option value="">(none)</option>'].concat(columns.map(c => '<option value="' + esc(c) + '"' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>')).join('');
+    const unsure = m && m.column && m.action === 'ask';
+    h += '<tr><td>' + HELP[role] + '</td><td><select data-role="' + role + '">' + opts + '</select></td><td class="' + (unsure ? 'bad' : 'mute') + '">' + (m && m.column ? Math.round(m.confidence * 100) + '%' + (unsure ? ' - please check' : '') : '-') + '</td></tr>';
+  }
+  h += '</tbody></table>';
+  if (info && info.preview && info.preview.length) {
+    h += '<div style="overflow-x:auto;margin-top:10px"><table class="small"><thead><tr>' + info.columns.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>'
+      + info.preview.map(r => '<tr>' + r.map(c => '<td>' + esc(String(c).slice(0, 80)) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+  }
+  h += '<p><button id="confirmbtn">' + (info && info.needs_confirmation ? 'Confirm and load' : 'Looks right, load it') + '</button> <button class="ghost" id="cancelbtn">Cancel</button></p>';
+  $('#s-map').innerHTML = h; show('#s-map'); show('#s-upload', false);
+  $('#confirmbtn').onclick = confirmMap; $('#cancelbtn').onclick = resetFlow;
+}
+
+async function confirmMap() {
+  const mapping = {};
+  document.querySelectorAll('#maptable select').forEach(s => { if (s.value) mapping[s.dataset.role] = s.value; });
+  if (!mapping.text) { msg('Choose which column holds the review text.'); return; }
+  msg(''); busy(true);
+  const r = await call('PUT', '/uploads/' + batch + '/mapping', JSON.stringify({mapping}), true);
+  busy(false);
+  if (!r.ok) { msg(errText(r.data, 'Could not ingest this file.')); return; }
+  show('#s-map', false); renderReport(r.data);
+}
+
+async function showReport(id) {
+  const r = await call('GET', '/uploads/' + id + '/report');
+  if (r.ok) renderReport(r.data);
+}
+
+function renderReport(rep) {
+  let h = '<h2>Data quality report</h2><p>' + rep.reviews_saved + ' of ' + rep.rows_total + ' rows are now reviews: ' + rep.accepted + ' accepted, ' + rep.repaired + ' repaired, ' + rep.rejected + ' rejected' + (rep.adds_up ? '.' : '. Warning: these counts do not add up.') + '</p>';
+  if (rep.problems && rep.problems.length) h += '<ul class="mute">' + rep.problems.map(p => '<li>' + p.count + ' x ' + esc(p.problem) + ' (' + esc(p.action) + ')</li>').join('') + '</ul>';
+  if (rep.rejected > 0) h += '<p><a href="/uploads/' + rep.batch_id + '/rejects.csv">Download the rejected rows</a></p>';
+  if (rep.reviews_saved > 0) h += '<p><button id="runbtn">Run analysis</button> <button class="ghost" id="resbtn">Show results so far</button> <button class="ghost" id="newbtn">Upload another file</button></p>';
+  else h += '<p class="warn">Nothing new was saved, so there is nothing to analyse. These reviews may already exist from an earlier upload.</p><p><button class="ghost" id="newbtn">Upload another file</button></p>';
+  $('#s-report').innerHTML = h; show('#s-report'); show('#s-upload', false);
+  $('#newbtn').onclick = resetFlow;
+  if (rep.reviews_saved > 0) { renderRun(); $('#runbtn').onclick = analyse; $('#resbtn').onclick = showResults; }
+}
+
+function renderRun() {
+  $('#s-run').innerHTML = '<h2>Analysis</h2><p class="mute small">Needs the worker running. Aspect finding is slow when a local language model is used.</p>'
+    + STAGES.map(s => '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between"><span>' + s[1] + '</span><span class="mute" id="pc-' + s[0] + '">0%</span></div><div class="bar"><div id="bar-' + s[0] + '"></div></div></div>').join('');
+  show('#s-run');
+}
+function setStage(key, pct) { $('#bar-' + key).style.width = pct + '%'; $('#pc-' + key).textContent = pct + '%'; }
+
+function runJob(jobId, onProgress) {
+  return new Promise((resolve, reject) => {
+    const es = new EventSource('/jobs/' + jobId + '/events');
+    es.onmessage = e => {
+      const j = JSON.parse(e.data); onProgress(j);
+      if (j.status === 'done') { es.close(); resolve(j); }
+      if (j.status === 'failed') { es.close(); reject(new Error(j.error || 'Job failed')); }
+    };
+    es.onerror = () => { es.close(); reject(new Error('Lost the progress stream. Is the worker running?')); };
+  });
+}
+
+async function analyse() {
+  msg(''); $('#runbtn').disabled = true;
+  try {
+    for (const [key] of STAGES) {
+      setStage(key, 0);
+      const s = await call('POST', '/uploads/' + batch + '/' + key);
+      if (!s.ok) throw new Error(errText(s.data, 'Could not start ' + key));
+      await runJob(s.data.job_id, j => setStage(key, j.progress));
+      setStage(key, 100);
+    }
+    await showResults();
+  } catch (e) { msg(e.message); }
+  finally { $('#runbtn').disabled = false; }
+}
+
+function highlight(text, phrase) {
+  const i = phrase ? text.toLowerCase().indexOf(phrase.toLowerCase()) : -1;
+  if (i < 0) return esc(text);
+  return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + phrase.length)) + '</mark>' + esc(text.slice(i + phrase.length));
+}
+const KIND = {underrated: 'text is happier than the stars', overrated: 'text is unhappier than the stars', sarcasm: 'possible sarcasm'};
+
+async function showResults() {
+  const r = await call('GET', '/uploads/' + batch + '/results');
+  if (!r.ok) { msg(errText(r.data, 'Could not load results.')); return; }
+  const d = r.data, st = d.stages, undone = [];
+  if (st.score.done < st.score.total) undone.push('sentiment');
+  if (st.aspects.done < st.aspects.total) undone.push('aspects');
+  let h = '<div class="card"><h2>Results for ' + esc(d.file_name || 'this upload') + '</h2>';
+  if (d.average_rating != null && d.text_adjusted_average != null) {
+    h += '<p>Customers gave <b>' + f2(d.average_rating) + '</b> stars on average. What the text supports is <b>' + f2(d.text_adjusted_average) + '</b>.'
+      + (d.mismatches ? ' Stars and text disagree on ' + d.mismatches + ' of ' + d.scored_reviews + ' reviews.' : '') + '</p>';
+  }
+  if (undone.length) h += '<p class="warn">Not finished yet: ' + undone.join(', ') + '. Run the analysis to complete these.</p>';
+  if (d.low_sample) h += '<p class="warn">Fewer than 30 reviews, so treat these numbers as a first look.</p>';
+  h += '<div class="grid"><div class="kpi"><span>Reviews</span><b>' + d.reviews + '</b><span>' + d.rated_reviews + ' rated' + (d.possible_spam ? ', ' + d.possible_spam + ' possible spam' : '') + '</span></div>'
+    + '<div class="kpi"><span>Average rating</span><b>' + f2(d.average_rating) + '</b></div>'
+    + '<div class="kpi"><span>Text-adjusted</span><b>' + f2(d.text_adjusted_average) + '</b></div>'
+    + '<div class="kpi"><span>Net sentiment</span><b>' + f2(d.net_sentiment) + '</b><span>' + (d.percent_negative == null ? '' : d.percent_negative + '% negative') + '</span></div></div></div>';
+
+  const mx = Math.max(1, ...d.histogram.map(x => x.count));
+  h += '<div class="card"><h2>How the stars are spread</h2>' + d.histogram.map(x => '<div class="hrow"><span style="width:50px">' + x.stars + ' star</span><div class="hbar" style="width:' + Math.round(240 * x.count / mx) + 'px"></div><span class="mute">' + x.count + '</span></div>').join('') + '</div>';
+
+  h += '<div class="card"><h2>Where stars and text disagree</h2>';
+  h += d.top_mismatches.length ? '<table><thead><tr><th>Stars</th><th>Text says</th><th>Review</th></tr></thead><tbody>' + d.top_mismatches.map(m => '<tr><td>' + f2(m.stars) + '</td><td>' + f2(m.text_stars) + '<br><span class="tag">' + esc(KIND[m.type] || m.type) + '</span></td><td>' + esc(m.text) + '</td></tr>').join('') + '</tbody></table>' : '<p class="mute">No mismatches found in this upload.</p>';
+  h += '</div>';
+
+  h += '<div class="card"><h2>What customers talk about</h2>';
+  h += d.aspects.length ? '<table><thead><tr><th>Aspect</th><th>Mentions</th><th>Average sentiment</th><th>Negative</th><th>Positive</th></tr></thead><tbody>' + d.aspects.map(a => '<tr><td>' + esc(a.aspect) + (a.low_sample ? ' <span class="tag">few mentions</span>' : '') + '</td><td>' + a.mentions + '</td><td class="' + (a.avg_sentiment <= -0.25 ? 'bad' : a.avg_sentiment >= 0.25 ? 'good' : 'mute') + '">' + f2(a.avg_sentiment) + '</td><td>' + a.negative + '</td><td>' + a.positive + '</td></tr>').join('') + '</tbody></table>' : '<p class="mute">No aspects yet. Run the analysis.</p>';
+  h += '</div>';
+
+  h += '<div class="card"><h2>Complaints hidden in happy reviews</h2>';
+  if (d.hidden.rated_4plus_analysed) {
+    h += '<p>' + d.hidden.reviews + ' of ' + d.hidden.rated_4plus_analysed + ' reviews rated 4 or 5 stars still contain a clear complaint' + (d.hidden.rate != null ? ' (' + Math.round(d.hidden.rate * 100) + '%)' : '') + '. Reading only low-star reviews would miss them.</p>'
+      + '<ul>' + d.hidden.examples.map(x => '<li>' + f2(x.stars) + ' stars, ' + esc(x.aspect) + ': ' + highlight(x.text, x.phrase) + '</li>').join('') + '</ul>';
+  } else h += '<p class="mute">Nothing analysed yet.</p>';
+  h += '</div>';
+
+  h += '<div class="card"><h2>What to fix first</h2>';
+  h += d.issues.length ? '<table><thead><tr><th>Issue</th><th>Reviews</th><th>Priority</th><th>Suggested action</th></tr></thead><tbody>' + d.issues.map(i => '<tr><td>' + esc(i.issue) + '</td><td>' + i.reviews + '</td><td>' + Math.round(i.priority_score) + '</td><td>' + esc(i.suggested_action || '') + (i.owner_team ? '<br><span class="tag">' + esc(i.owner_team) + '</span>' : '') + '</td></tr>').join('') + '</tbody></table>' : '<p class="mute">No issues built yet, or there were too few repeated complaints.</p>';
+  h += '<p class="mute small">' + d.notes.map(esc).join(' ') + '</p></div>';
+
+  $('#s-results').innerHTML = h; show('#s-results');
+  $('#s-results').scrollIntoView({behavior: 'smooth'});
+}
+</script>
+</body>
+</html>

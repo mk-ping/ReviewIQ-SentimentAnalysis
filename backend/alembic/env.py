@@ -22,8 +22,18 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+EXTERNAL_TABLES = {"review_embedding", "audit_log"}
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Tables made by hand-written SQL migrations are not in the models, so autogenerate must not touch them."""
+    if type_ == "table" and name in EXTERNAL_TABLES:
+        return False
+    return True
+
+
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True, include_object=include_object)
     with context.begin_transaction():
         context.run_migrations()
 

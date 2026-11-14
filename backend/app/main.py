@@ -12,6 +12,7 @@ from app.api.insights import router as insights_router
 from app.api.issues import router as issues_router
 from app.api.jobs import router as jobs_router
 from app.api.mapping import router as mapping_router
+from app.api.results import router as results_router
 from app.api.uploads import router as uploads_router
 from app.core.config import settings
 from app.db.session import get_session
@@ -35,6 +36,7 @@ app.include_router(dashboard_router)
 app.include_router(explorer_router)
 app.include_router(evaluation_router)
 app.include_router(actions_router)
+app.include_router(results_router)
 
 
 @app.get("/")
@@ -49,3 +51,12 @@ async def health(session: AsyncSession = Depends(get_session)):
         await session.execute(text("SELECT extversion FROM pg_extension WHERE extname='vector'"))
     ).scalar()
     return {"status": "ok", "database": db_ok, "pgvector": vec}
+
+
+from pathlib import Path as _Path
+from fastapi.responses import FileResponse as _FileResponse
+
+
+@app.get("/app", include_in_schema=False)
+async def web_app():
+    return _FileResponse(_Path(__file__).parent / "static" / "index.html")
