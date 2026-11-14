@@ -1,3 +1,4 @@
+
 import asyncio
 
 from sqlalchemy import and_, func, select
@@ -31,14 +32,15 @@ async def handle_score_all(job_id: int, batch_id: int) -> None:
             raise RuntimeError("This batch has no reviews to score.")
         for cfg in cfgs:
             mid = await _model_id(s, cfg)
-            pending = (
-                await s.execute(
-                    select(Review.review_id, Review.text_clean)
-                    .outerjoin(Prediction, and_(Prediction.review_id == Review.review_id, Prediction.model_id == mid))
-                    .where(Review.batch_id == batch_id, Prediction.review_id.is_(None))
-                    .order_by(Review.review_id)
-                )
-            ).all()
+            q = (
+                select(Review.review_id, Review.text_clean)
+                .outerjoin(Prediction, and_(Prediction.review_id == Review.review_id, Prediction.model_id == mid))
+                .where(Review.batch_id == batch_id, Prediction.review_id.is_(None))
+                .order_by(Review.review_id)
+            )
+            if cfg.get("languages"):  # language_filter: only languages this model was trained on
+                q = q.where(Review.language.in_(cfg["languages"]))
+            pending = (await s.execute(q)).all()
             todo.append((cfg, mid, pending))
 
     total = sum(len(p) for _, _, p in todo)
@@ -64,4 +66,4 @@ async def handle_score_all(job_id: int, batch_id: int) -> None:
                 done += len(part)
                 await set_progress(s, job_id, int(100 * done / max(total, 1)))
     async with SessionLocal() as s:
-        await score_batch(s, batch_id)
+        await score_batch(s, batch_id)

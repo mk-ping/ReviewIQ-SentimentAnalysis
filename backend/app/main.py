@@ -8,6 +8,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.evaluation import router as evaluation_router
 from app.api.explorer import router as explorer_router
 from app.api.ingest import router as ingest_router
+from app.api.listing import router as listing_router
 from app.api.insights import router as insights_router
 from app.api.issues import router as issues_router
 from app.api.jobs import router as jobs_router
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(uploads_router)
 app.include_router(mapping_router)
 app.include_router(ingest_router)
+app.include_router(listing_router)
 app.include_router(insights_router)
 app.include_router(jobs_router)
 app.include_router(issues_router)

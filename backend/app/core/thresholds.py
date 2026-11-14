@@ -24,3 +24,13 @@ TIEBREAK_SAMPLE = 300       # rows used to test a column against text sentiment
 TIEBREAK_WEAK_HEADER = 0.6  # a rating or helpful column with a weaker header match gets tested
 TIEBREAK_TRACKS = 0.3       # correlation at or above this: the column moves with sentiment (a rating)
 TIEBREAK_FLAT = 0.1         # correlation within +/- this: the column ignores sentiment (votes, counts)
+
+LISTING_TOP_K = 20        # nearest reviews examined per claim (plan starting value: 30)
+LISTING_MIN_SIM = 0.30    # best sentence must be at least this similar to the claim
+LISTING_MIN_EVIDENCE = 5  # supports + contradicts needed for a verdict
+LISTING_CONFIRM = 0.70    # support share at or above: confirmed
+LISTING_CONTRADICT = 0.30 # support share at or below: contradicted
+
+SPIKE_Z = 2.5             # weekly count this many std above earlier weeks raises an alert
+SPIKE_MIN_WEEKS = 4       # earlier weeks needed before any alert can fire
+SPIKE_MIN_COUNT = 5       # latest week needs at least this many complaints

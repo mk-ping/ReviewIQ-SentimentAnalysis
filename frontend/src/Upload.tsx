@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
@@ -17,6 +18,13 @@ type Report = {
   batch_id: number; rows_total: number; accepted: number; repaired: number; rejected: number; adds_up: boolean;
   reviews_saved: number; already_ingested?: boolean;
   problems: { problem: string; action: string; count: number }[];
+};
+type Results = {
+  reviews: number; scored_reviews: number; average_rating: number | null; text_adjusted_average: number | null;
+  percent_negative: number | null; mismatches: number; possible_spam: number; low_sample: boolean;
+  hidden: { reviews: number; rated_4plus_analysed: number; rate: number | null };
+  aspects: { aspect: string; mentions: number; avg_sentiment: number | null; negative: number }[];
+  issues: { issue: string; aspect: string; reviews: number; suggested_action: string | null }[];
 };
 type Job = { job_id: number; status: string; progress: number; error: string | null };
 
@@ -66,10 +74,21 @@ export default function Upload() {
   const [stage, setStage] = useState<Record<string, number>>({});
   const [running, setRunning] = useState("");
   const [finished, setFinished] = useState(false);
+  const [results, setResults] = useState<Results | null>(null);
+  const [stalled, setStalled] = useState(false);
+  const lastMove = useRef(Date.now());
+
+  // Worker hint: if a stage shows no movement for 20 s, the worker is probably not running.
+  useEffect(() => {
+    if (!running) { setStalled(false); return; }
+    lastMove.current = Date.now();
+    const t = setInterval(() => setStalled(Date.now() - lastMove.current > 20000), 2000);
+    return () => clearInterval(t);
+  }, [running]);
 
   const reset = () => {
     setBatch(null); setInfo(null); setReport(null); setError(""); setNote(""); setPickColumns(null);
-    setStage({}); setRunning(""); setFinished(false); setChoice({}); setPasted("");
+    setStage({}); setRunning(""); setFinished(false); setChoice({}); setPasted(""); setResults(null);
   };
 
   async function loadMapping(id: number) {
@@ -115,22 +134,25 @@ export default function Upload() {
       if (!r.ok) { setError(errText(r.data, "Could not ingest this file.")); return; }
       setReport(r.data); setInfo(null); setPickColumns(null);
       qc.invalidateQueries();
+      if (r.data.reviews_saved > 0) void analyse(batch);  // one click: load, then analyse straight away
     } finally { setBusy(false); }
   }
 
-  async function analyse() {
-    if (batch == null) return;
-    setError(""); setFinished(false); setStage({});
+  async function analyse(id: number | null = batch) {
+    if (id == null) return;
+    setError(""); setFinished(false); setStage({}); setResults(null);
     try {
       for (const [key, , path] of STAGES) {
         setRunning(key);
-        const s = await call("POST", `/uploads/${batch}/${path}`);
+        const s = await call("POST", `/uploads/${id}/${path}`);
         if (!s.ok) throw new Error(errText(s.data, "Could not start " + key));
-        await runJob(s.data.job_id, (j) => setStage((p) => ({ ...p, [key]: j.progress })));
+        await runJob(s.data.job_id, (j) => { lastMove.current = Date.now(); setStage((p) => ({ ...p, [key]: j.progress })); });
         setStage((p) => ({ ...p, [key]: 100 }));
       }
       await call("POST", "/views/refresh");
       qc.invalidateQueries();
+      const res = await call("GET", `/uploads/${id}/results`);
+      if (res.ok) setResults(res.data as Results);
       setFinished(true);
     } catch (e) {
       setError((e as Error).message);
@@ -253,15 +275,49 @@ export default function Upload() {
                   </li>
                 ))}
               </ul>
+              {stalled && (
+                <p className="mb-2 rounded-md bg-amber-50 p-2 text-sm text-amber-700">
+                  No progress for 20 seconds. Is the worker running? Start it with: python -m app.worker.main (it keeps the job, so nothing is lost).
+                </p>
+              )}
               {!finished && (
-                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm text-white disabled:opacity-50" disabled={running !== ""} onClick={analyse}>
-                  {running ? "Running..." : "Run analysis"}
+                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm text-white disabled:opacity-50" disabled={running !== ""} onClick={() => analyse()}>
+                  {running ? "Running..." : error ? "Retry analysis" : "Run analysis"}
                 </button>
               )}
               {finished && (
-                <p className="text-sm text-emerald-700">
-                  Done. <Link className="underline" to="/">Open Home</Link> or <Link className="underline" to="/rating-vs-text">Rating vs Text</Link>.
-                </p>
+                <div className="space-y-3 text-sm">
+                  <p className="text-emerald-700">Analysis finished.</p>
+                  {results && (
+                    <div className="rounded-lg bg-slate-50 p-3">
+                      <p>
+                        {results.reviews} reviews. Stars average {results.average_rating ?? "-"}; read from the text, {results.text_adjusted_average ?? "-"}.
+                        {results.percent_negative != null ? ` ${results.percent_negative}% of reviews read negative.` : ""}
+                      </p>
+                      <p>
+                        {results.mismatches} reviews where stars and words disagree
+                        {results.hidden.rate != null ? `; ${results.hidden.reviews} of ${results.hidden.rated_4plus_analysed} high-star reviews hide a complaint.` : "."}
+                        {results.possible_spam > 0 ? ` ${results.possible_spam} look like spam.` : ""}
+                      </p>
+                      {results.low_sample && <p className="text-amber-700">Only {results.reviews} reviews, so treat these numbers as rough.</p>}
+                      {results.issues.length > 0 && (
+                        <>
+                          <p className="mt-2 font-medium">Fix first</p>
+                          <ul className="list-disc pl-5">
+                            {results.issues.slice(0, 3).map((i, k) => <li key={k}>{i.issue} ({i.reviews} reviews){i.suggested_action ? ": " + i.suggested_action : ""}</li>)}
+                          </ul>
+                        </>
+                      )}
+                      {results.aspects.length > 0 && (
+                        <p className="mt-2 text-slate-600">Most discussed: {results.aspects.slice(0, 4).map((a) => `${a.aspect} (${a.mentions})`).join(", ")}.</p>
+                      )}
+                    </div>
+                  )}
+                  <p>
+                    <Link className="underline" to="/">Open Home</Link>, <Link className="underline" to="/problems">Problems</Link>,{" "}
+                    <Link className="underline" to="/rating-vs-text">Rating vs Text</Link> or <Link className="underline" to="/explorer">Explorer</Link>.
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -270,4 +326,4 @@ export default function Upload() {
       )}
     </div>
   );
-}
+}
