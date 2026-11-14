@@ -1,0 +1,38 @@
+x-backend: &backend
+  build: ./backend
+  restart: unless-stopped
+  environment:
+    DATABASE_URL: postgresql+asyncpg://reviewiq:reviewiq@db:5432/reviewiq
+    LLM_URL: http://host.docker.internal:11434
+    UPLOAD_DIR: /data/uploads
+    HF_HOME: /models
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  volumes:
+    - uploads:/data/uploads
+    - hfcache:/models
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  api:
+    <<: *backend
+    ports:
+      - "8010:8010"
+  worker:
+    <<: *backend
+    command: ["python", "-m", "app.worker.main"]
+    depends_on:
+      - api
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    depends_on:
+      - api
+
+volumes:
+  uploads:
+  hfcache:
