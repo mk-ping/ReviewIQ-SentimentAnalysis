@@ -159,4 +159,7 @@ async def handle_embed(job_id: int, batch_id: int) -> None:
             await set_progress(s, job_id, int(100 * min(i + CHUNK, total) / total))
 
 
-HANDLERS = {"score": handle_score, "aspects": handle_aspects, "issues": handle_issues, "embed": handle_embed}
+from app.worker.scoring import handle_score_all
+
+
+HANDLERS = {"score": handle_score_all, "aspects": handle_aspects, "issues": handle_issues, "embed": handle_embed}

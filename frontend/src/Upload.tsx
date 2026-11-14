@@ -157,8 +157,8 @@ export default function Upload() {
             onClick={() => fileRef.current?.click()}
             className={"cursor-pointer rounded-xl border-2 border-dashed p-10 text-center " + (drag ? "border-indigo-500 bg-indigo-50" : "border-slate-300")}>
             <p className="font-medium">Drop a file here, or click to choose</p>
-            <p className="text-sm text-slate-500">CSV, TSV, Excel, JSON or JSONL, TXT</p>
-            <input ref={fileRef} type="file" className="hidden" accept=".csv,.tsv,.xlsx,.json,.jsonl,.txt"
+            <p className="text-sm text-slate-500">CSV, TSV, Excel, JSON or JSONL, TXT, PDF, XML</p>
+            <input ref={fileRef} type="file" className="hidden" accept=".csv,.tsv,.xlsx,.json,.jsonl,.txt,.pdf,.xml"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
           </div>
           <p className="my-3 text-center text-sm text-slate-400">or paste reviews, one per line</p>
