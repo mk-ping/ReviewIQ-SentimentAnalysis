@@ -50,3 +50,30 @@ class ReviewAspectRun(Base):
     method: Mapped[str] = mapped_column(String(10))
     n_found: Mapped[int] = mapped_column(Integer, server_default="0")
     processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SentenceAspect(Base):
+    """One row per (sentence, aspect). Sentences with no aspect are stored as 'general' so coverage can be measured."""
+    __tablename__ = "sentence_aspect"
+    __table_args__ = (
+        CheckConstraint("method IN ('sbert','keyword','general')", name="method_valid"),
+        CheckConstraint("sent_score IS NULL OR (sent_score >= -1 AND sent_score <= 1)", name="score_range"),
+        UniqueConstraint("review_id", "sent_idx", "aspect", name="uq_sentence_aspect_sentence"),
+    )
+
+    sent_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    review_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("review.review_id", ondelete="CASCADE"))
+    sent_idx: Mapped[int] = mapped_column(Integer)
+    sentence: Mapped[str] = mapped_column(Text)
+    aspect: Mapped[str] = mapped_column(String(50))
+    method: Mapped[str] = mapped_column(String(10))
+    sim: Mapped[float | None] = mapped_column(Float)
+    sent_score: Mapped[float | None] = mapped_column(Float)
+
+
+class SentenceAspectRun(Base):
+    __tablename__ = "sentence_aspect_run"
+
+    review_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("review.review_id", ondelete="CASCADE"), primary_key=True)
+    n_sentences: Mapped[int] = mapped_column(Integer, server_default="0")
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

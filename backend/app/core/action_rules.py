@@ -10,6 +10,7 @@ RULES = {
     "ease of use": ("Improve the instructions or the dispensing mechanism", "Product and design"),
     "appearance": ("Check that colour and finish match the listing photos", "Design and marketing"),
     "effectiveness": ("Compare the claimed results with customer feedback and review the formulation", "Product and R&D"),
+    "results": ("Compare the claimed results with customer feedback and review the formulation or the instructions", "Product and R&D"),
     "customer service": ("Set response-time targets and retrain the support team on the repeated complaints", "Customer support"),
 }
 DEFAULT = ("Read the evidence reviews and decide on an owner", "Manager")

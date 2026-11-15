@@ -2,7 +2,7 @@ from app.core.action_rules import RULES, rule_for
 from app.core.aspect_config import CATEGORIES
 from app.services.actions import share_change
 
-assert set(RULES) == set(CATEGORIES), set(RULES) ^ set(CATEGORIES)
+assert set(CATEGORIES) <= set(RULES), set(CATEGORIES) - set(RULES)   # older aspect names keep their rules
 assert rule_for("nonsense")[1] == "Manager"
 
 r = share_change({1, 2, 3}, [1, 2, 3, 4], [5, 6, 7, 8])

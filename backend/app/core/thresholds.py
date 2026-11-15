@@ -36,3 +36,6 @@ SPIKE_MIN_WEEKS = 4       # earlier weeks needed before any alert can fire
 SPIKE_MIN_COUNT = 5       # latest week needs at least this many complaints
 
 MIN_VAL_PER_GROUP = 100   # a route group with fewer validation reviews uses equal ensemble weights
+
+ASPECT_SIM = 0.35         # a sentence gets every aspect whose cosine similarity is at least this (recheck for multilingual SBERT)
+SBERT_EN_MODEL = "sentence-transformers/all-MiniLM-L6-v2"   # English sentences; others use EMBED_MODEL

@@ -1,5 +1,5 @@
 from app.models.actions import Action
-from app.models.aspects import Aspect, ReviewAspect, ReviewAspectRun
+from app.models.aspects import Aspect, ReviewAspect, ReviewAspectRun, SentenceAspect, SentenceAspectRun
 from app.models.core import Brand, Product, Review
 from app.models.evaluation import GoldLabel
 from app.models.ingest import (
@@ -11,7 +11,7 @@ from app.models.scoring import MLModel, Prediction, ReviewScore
 from app.models.tenancy import AppUser, Workspace
 
 __all__ = [
-    "Action", "Aspect", "ReviewAspect", "ReviewAspectRun", "Brand", "Product", "Review", "GoldLabel",
+    "Action", "Aspect", "ReviewAspect", "ReviewAspectRun", "SentenceAspect", "SentenceAspectRun", "Brand", "Product", "Review", "GoldLabel",
     "ColumnMapping", "ColumnProfile", "IngestIssue", "RawReviewStaging", "SourceTemplate", "UploadBatch",
     "MLModel", "Prediction", "ReviewScore", "AppUser", "Workspace", "ScoringJob",
     "Issue", "IssueReview", "IssuePriority",
