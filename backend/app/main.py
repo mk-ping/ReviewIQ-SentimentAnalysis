@@ -15,6 +15,7 @@ from app.api.jobs import router as jobs_router
 from app.api.mapping import router as mapping_router
 from app.api.reports import router as reports_router
 from app.api.results import router as results_router
+from app.api.sentiment import router as sentiment_router
 from app.api.uploads import router as uploads_router
 from app.core.config import settings
 from app.db.session import get_session
@@ -40,6 +41,7 @@ app.include_router(explorer_router)
 app.include_router(evaluation_router)
 app.include_router(actions_router)
 app.include_router(results_router)
+app.include_router(sentiment_router)
 app.include_router(reports_router)
 
 

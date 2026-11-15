@@ -1,4 +1,4 @@
-﻿import { NavLink, Outlet } from "react-router-dom";
+﻿import { Link, NavLink, Outlet } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, TrueRating } from "./api";
 import { useFilters } from "./store";
@@ -12,6 +12,7 @@ const PAGES = [
   { to: "/trends", label: "Trends and Alerts", ready: true },
   { to: "/explorer", label: "Review Explorer", ready: true },
   { to: "/upload", label: "Upload and Data", ready: true },
+  { to: "/sentiment", label: "Sentiment", ready: true },
   { to: "/label", label: "Gold Labels and Evaluation", ready: true },
 ];
 
@@ -34,6 +35,7 @@ function FilterBar() {
         <input type="date" className={input} value={f.dateTo} onChange={(e) => f.set({ dateTo: e.target.value })} />
       </label>
       <button className="rounded-md border px-2 py-1 text-slate-600 hover:bg-slate-100" onClick={f.reset}>Clear</button>
+      <Link to="/upload" className="ml-auto rounded-md bg-indigo-600 px-3 py-1 text-white hover:bg-indigo-700">Upload reviews</Link>
     </div>
   );
 }

@@ -138,11 +138,11 @@ export default function Upload() {
     } finally { setBusy(false); }
   }
 
-  async function analyse(id: number | null = batch) {
+  async function analyse(id: number | null = batch, only?: string[]) {
     if (id == null) return;
     setError(""); setFinished(false); setStage({}); setResults(null);
     try {
-      for (const [key, , path] of STAGES) {
+      for (const [key, , path] of STAGES.filter(([k]) => !only || only.includes(k))) {
         setRunning(key);
         const s = await call("POST", `/uploads/${id}/${path}`);
         if (!s.ok) throw new Error(errText(s.data, "Could not start " + key));
@@ -281,9 +281,14 @@ export default function Upload() {
                 </p>
               )}
               {!finished && (
-                <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm text-white disabled:opacity-50" disabled={running !== ""} onClick={() => analyse()}>
-                  {running ? "Running..." : error ? "Retry analysis" : "Run analysis"}
-                </button>
+                <div className="flex gap-2">
+                  <button className="rounded-md bg-indigo-600 px-3 py-1 text-sm text-white disabled:opacity-50" disabled={running !== ""} onClick={() => analyse()}>
+                    {running ? "Running..." : error ? "Retry full analysis" : "Run full analysis"}
+                  </button>
+                  <button className="rounded-md border px-3 py-1 text-sm hover:bg-slate-100 disabled:opacity-50" disabled={running !== ""} onClick={() => analyse(batch, ["score"])}>
+                    Get sentiment only
+                  </button>
+                </div>
               )}
               {finished && (
                 <div className="space-y-3 text-sm">
@@ -314,6 +319,7 @@ export default function Upload() {
                     </div>
                   )}
                   <p>
+                    <a className="underline" href={`/api/uploads/${report.batch_id}/results.csv`}>Download results (CSV)</a>, <Link className="underline" to="/sentiment">Sentiment page</Link>,{" "}
                     <Link className="underline" to="/">Open Home</Link>, <Link className="underline" to="/problems">Problems</Link>,{" "}
                     <Link className="underline" to="/rating-vs-text">Rating vs Text</Link> or <Link className="underline" to="/explorer">Explorer</Link>.
                   </p>
@@ -326,4 +332,5 @@ export default function Upload() {
       )}
     </div>
   );
-}
+}
+

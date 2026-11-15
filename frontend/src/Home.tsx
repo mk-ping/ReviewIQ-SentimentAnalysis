@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { api, Distribution, Summary, TrueRating } from "./api";
 import Chart from "./Chart";
 import { filterQs, useFilters } from "./store";
@@ -45,6 +46,7 @@ export default function Home() {
           {sum.reviews} reviews. Customers are {dist.audience ?? "not yet rated"}.
           {sum.mismatch_rate != null && ` Stars and text disagree on ${(sum.mismatch_rate * 100).toFixed(0)}% of reviews.`}
         </p>
+        <Link to="/upload" className="mt-2 inline-block rounded-md bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700">Upload reviews</Link>
       </header>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
