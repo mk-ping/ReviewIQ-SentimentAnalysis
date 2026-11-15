@@ -1,3 +1,4 @@
+
 x-backend: &backend
   build: ./backend
   restart: unless-stopped
@@ -6,11 +7,13 @@ x-backend: &backend
     LLM_URL: http://host.docker.internal:11434
     UPLOAD_DIR: /data/uploads
     HF_HOME: /models
+    TFIDF_PATH: /ml/out/tfidf_lr.joblib
   extra_hosts:
     - "host.docker.internal:host-gateway"
   volumes:
     - uploads:/data/uploads
     - hfcache:/models
+    - ./ml/out:/ml/out:ro   # the trained TF-IDF baseline (run scripts.train_tfidf first); without it that model is skipped
   depends_on:
     db:
       condition: service_healthy
@@ -23,8 +26,13 @@ services:
   worker:
     <<: *backend
     command: ["python", "-m", "app.worker.main"]
+    healthcheck:
+      disable: true
     depends_on:
-      - api
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy   # the API container runs the migrations first
   web:
     build: ./frontend
     restart: unless-stopped

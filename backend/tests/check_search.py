@@ -15,7 +15,7 @@ async def main() -> None:
 
         trig = {r[0] for r in (await s.execute(text(
             "SELECT tgname FROM pg_trigger WHERE tgname LIKE 'trg_audit_%' AND NOT tgisinternal"))).all()}
-        assert trig == {"trg_audit_action", "trg_audit_upload_batch", "trg_audit_source_template"}, trig
+        assert trig >= {"trg_audit_action", "trg_audit_upload_batch", "trg_audit_source_template", "trg_audit_gold_label"}, trig
         print("audit triggers present")
 
         batch = (await s.execute(text("SELECT min(batch_id) FROM upload_batch"))).scalar()
