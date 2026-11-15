@@ -1,18 +1,44 @@
-
 # ReviewIQ decisions
 
-## Models (CPU only, all pretrained)
-- Core 1: tabularisai/multilingual-sentiment-analysis (5-class, every language, cc-by-nc-4.0, fine for coursework).
-- Core 2: nlptown/bert-base-multilingual-uncased-sentiment (1-5 stars, MIT). Routed by detected language to en, es, fr, de, it, nl only.
-  Hindi, Hinglish and undetermined text get no vote from it, because it was not trained on them.
-- Optional: cardiffnlp/twitter-xlm-roberta-base-sentiment, enabled by setting cardiff_model.
-- We train nothing. The GPU fine-tune (ml/reviewiq_train.py) is retired: it needed a GPU and was not reproducible on a laptop.
-- Each model is measured on the hand-labelled gold set and kept only if it beats stars alone and the TF-IDF baseline.
+These follow the final pipeline document (Nov 14). The older model-swap notes are replaced.
 
-## Fusion
-Text score = P(pos) - P(neg). Star score = (stars - 3) / 2. Weight = clip(confidence, 0.4, 0.9).
-Fused stars = 3 + 2 * (w * text + (1 - w) * star). Probabilities are averaged over the models that ran for that review.
-A mismatch is flagged only when every model that ran agrees on the label.
+## Models (CPU only, nothing needs an API key)
+- We train one model: TF-IDF + Logistic Regression (single words and word pairs, min_df 3, 50,000 features, balanced classes),
+  trained on public sources and saved as ml/out/tfidf_lr.joblib. Every other model is pretrained and downloaded once.
+- English: TF-IDF, cardiffnlp/twitter-roberta-base-sentiment-latest, nlptown/bert-base-multilingual-uncased-sentiment.
+- Spanish, French, German, Italian, Dutch: TF-IDF, nlptown, cardiffnlp/twitter-xlm-roberta-base-sentiment.
+- Hindi, Hinglish, undetermined: TF-IDF, Twitter XLM-RoBERTa, multilingual DistilBERT.
+  nlptown does not cover Hindi, so Hindi reviews never get a vote from it and the star gap shows as not available.
+- Dropped: tabularisai as a core model, the fine-tuned GPU star model, and the rule that every model must agree before a
+  mismatch is flagged.
+- Route groups and per-group weights are designs validated by ablation on the gold set, not results.
 
-## Alerts
-SPIKE_Z 2.5, SPIKE_MIN_WEEKS 4, SPIKE_MIN_COUNT 5 (core/thresholds.py): chosen defaults, tune on real data.
+## Ensemble and fusion
+- Ensemble weight = validation macro F1 of each model in the route group. Groups with fewer than 100 validation reviews use equal weights.
+  Uploads with fewer than 300 rated reviews use the stored default weights. With 200 or more gold labels, weights are recomputed against them.
+- Text score = P(pos) - P(neg). Star score = (stars - 3) / 2. Confidence = highest ensemble probability; w = clip(confidence, 0.4, 0.9).
+- Fused = w x text + (1 - w) x star; fused stars = 3 + 2 x fused.
+- Mismatch: confidence >= 0.7 and abs(text - star) >= 0.7 (tuned on gold labels, see tune_thresholds). Star gap: nlptown expected stars minus actual; flag at abs >= 1.5.
+
+## Aspects
+- pysbd sentences (fragments under 2 words dropped); seven aspects with 6 seed phrases each (config/aspect_config.py).
+- SBERT: all-MiniLM-L6-v2 for English, paraphrase-multilingual-MiniLM-L12-v2 for the rest. A sentence gets every aspect at cosine 0.35 or more;
+  otherwise a keyword check on word starts; otherwise general. The LLM never replaces the SBERT tags.
+- Sentence sentiment: RoBERTa for English, Twitter XLM-RoBERTa for other route groups.
+- The aspect view smooths each cell with (n x cell mean + 10 x overall mean) / (n + 10).
+- review_aspect is derived from sentence_aspect so Hidden Dissatisfaction and the issues keep one reading path.
+
+## Issues
+- Problem sentences: sentiment -0.25 or lower. An aspect needs 30 of them for per-aspect KMeans (k 2 to 4, silhouette picks k, clusters named by c-TF-IDF,
+  rare complaints beyond mean + 2 std). Fewer than 30 gives one issue marked few sentences.
+- English and non-English sentences are clustered separately because their vectors come from different models.
+
+## Embeddings
+- One vector per review with a model column; search compares only vectors from the same model. HNSW index on 384-number vectors.
+
+## Reports
+- reportlab for the PDF and openpyxl for Excel, so nothing needs a system library.
+- Alerts: SPIKE_Z 2.5, SPIKE_MIN_WEEKS 4, SPIKE_MIN_COUNT 5 (core/thresholds.py): chosen defaults, tune on real data.
+
+## Retired
+- The GPU fine-tuning path. ml/reviewiq_train.py is kept only for its build and baseline commands (public-source data build for TF-IDF training and the held-out evaluation).

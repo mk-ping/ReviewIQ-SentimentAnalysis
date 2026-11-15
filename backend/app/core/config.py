@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     upload_dir: str = "../data/uploads"
     default_workspace_name: str = "Default workspace"
     job_demo_delay: float = 1.0
-    sentiment_model: str = "tabularisai/multilingual-sentiment-analysis"
+    # no sentiment_model: the model list comes from services/sentiment.registry()
     roberta_model: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
     nlptown_model: str = "nlptown/bert-base-multilingual-uncased-sentiment"
     xlmr_model: str = "cardiffnlp/twitter-xlm-roberta-base-sentiment"

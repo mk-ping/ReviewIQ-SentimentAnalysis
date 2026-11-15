@@ -68,7 +68,7 @@ export type Recommendation = {
   existing_action_id: number | null;
 };
 export type AspectRow = {
-  aspect: string; mentions: number; reviews: number; avg_sentiment: number;
+  aspect: string; mentions: number; reviews: number; avg_sentiment: number; smoothed_sentiment?: number;
   negative: number; positive: number; neutral: number; low_sample: boolean;
 };
 export type Drivers = {

@@ -45,3 +45,5 @@ ISSUE_K_MIN = 2           # KMeans k range, the silhouette score picks k
 ISSUE_K_MAX = 4
 ISSUE_RARE_STD = 2.0      # a sentence farther than mean + this many std from its cluster centre is a rare complaint
 KMEANS_SEED = 42
+
+ASPECT_M = 10             # aspect heatmap smoothing: (n x cell mean + m x overall mean) / (n + m)

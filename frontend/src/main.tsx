@@ -11,6 +11,7 @@ import Compare from "./Compare";
 import Explorer from "./Explorer";
 import Upload from "./Upload";
 import Sentiment from "./Sentiment";
+import Listing from "./Listing";
 import Label from "./Label";
 import Reports from "./Reports";
 import Trends from "./Trends";
@@ -33,6 +34,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="sentiment" element={<Sentiment />} />
             <Route path="label" element={<Label />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="listing" element={<Listing />} />
             <Route path="trends" element={<Trends />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>

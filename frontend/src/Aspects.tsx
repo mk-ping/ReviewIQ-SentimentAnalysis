@@ -12,17 +12,18 @@ export default function Aspects() {
 
   if (a.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
   if (a.error || !a.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
-  const rows = [...a.data.aspects].sort((x, y) => x.avg_sentiment - y.avg_sentiment);
+  const sm = (r: { avg_sentiment: number; smoothed_sentiment?: number }) => r.smoothed_sentiment ?? r.avg_sentiment;
+  const rows = [...a.data.aspects].sort((x, y) => sm(x) - sm(y));
   const worst = rows[0], best = rows[rows.length - 1];
 
   const option = {
     grid: { left: 110, right: 20, top: 10, bottom: 30 },
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    xAxis: { type: "value", min: -1, max: 1, name: "average sentiment" },
+    xAxis: { type: "value", min: -1, max: 1, name: "smoothed average sentiment" },
     yAxis: { type: "category", data: rows.map((r) => r.aspect) },
     series: [{
       type: "bar",
-      data: rows.map((r) => ({ value: r.avg_sentiment, itemStyle: { color: r.avg_sentiment < -0.25 ? "#dc2626" : r.avg_sentiment > 0.25 ? "#16a34a" : "#94a3b8" } })),
+      data: rows.map((r) => ({ value: sm(r), itemStyle: { color: sm(r) < -0.25 ? "#dc2626" : sm(r) > 0.25 ? "#16a34a" : "#94a3b8" } })),
     }],
   };
 
@@ -40,12 +41,12 @@ export default function Aspects() {
         <h2 className="mb-2 font-semibold">Average sentiment by aspect</h2>
         <Chart option={option as never} height={Math.max(200, rows.length * 36 + 40)} />
         <table className="mt-3 w-full text-sm">
-          <thead className="text-left text-slate-500"><tr><th>Aspect</th><th>Mentions</th><th>Positive</th><th>Neutral</th><th>Negative</th></tr></thead>
+          <thead className="text-left text-slate-500"><tr><th>Aspect</th><th>Mentions</th><th>Positive</th><th>Neutral</th><th>Negative</th><th>Raw average</th></tr></thead>
           <tbody>
             {[...rows].reverse().map((r) => (
               <tr key={r.aspect} className="border-t">
                 <td className="py-1">{r.aspect}{r.low_sample && <span className="ml-2 text-xs text-amber-600">few mentions</span>}</td>
-                <td>{r.mentions}</td><td>{r.positive}</td><td>{r.neutral}</td><td>{r.negative}</td>
+                <td>{r.mentions}</td><td>{r.positive}</td><td>{r.neutral}</td><td>{r.negative}</td><td>{r.avg_sentiment.toFixed(2)}</td>
               </tr>
             ))}
           </tbody>

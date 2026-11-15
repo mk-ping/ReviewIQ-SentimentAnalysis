@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import thresholds as T
 from app.db.session import get_session
 from app.models import Aspect, Product, Review, ReviewAspect, ReviewAspectRun, ReviewScore, Workspace
+from app.services.smoothing import smooth
 from app.services.true_rating import true_rating
 
 router = APIRouter(tags=["insights"])
@@ -68,8 +69,11 @@ async def get_aspects(session: AsyncSession = Depends(get_session)):
             .order_by(func.count().desc())
         )
     ).all()
-    return {"aspects": [
+    total = sum(r[1] for r in rows)
+    overall = sum(r[1] * float(r[3]) for r in rows) / total if total else 0.0
+    return {"smoothing_m": T.ASPECT_M, "aspects": [
         {"aspect": name, "mentions": n, "reviews": nr, "avg_sentiment": round(float(avg), 2),
+         "smoothed_sentiment": round(smooth(n, float(avg), overall, T.ASPECT_M), 2),
          "negative": neg, "positive": pos, "neutral": n - neg - pos, "low_sample": n < T.LOW_SAMPLE}
         for name, n, nr, avg, neg, pos in rows
     ]}
