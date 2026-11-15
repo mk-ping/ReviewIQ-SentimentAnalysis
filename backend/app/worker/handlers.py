@@ -162,6 +162,7 @@ async def handle_embed(job_id: int, batch_id: int) -> None:
 from app.worker.scoring import handle_score_all
 
 from app.worker.aspects_sbert import handle_aspects as handle_aspects_sentences
+from app.worker.embed_models import handle_embed as handle_embed_models
 
 
-HANDLERS = {"score": handle_score_all, "aspects": handle_aspects_sentences, "issues": handle_issues, "embed": handle_embed}
+HANDLERS = {"score": handle_score_all, "aspects": handle_aspects_sentences, "issues": handle_issues, "embed": handle_embed_models}

@@ -50,6 +50,7 @@ export async function send<T>(method: "POST" | "PATCH", path: string, body?: unk
 }
 
 export type Issue = {
+  few_sentences?: boolean; rare_reviews?: number;
   issue_id: number; name: string; aspect: string; keywords: string[]; reviews: number; low_sample: boolean;
   frequency: number; severity: number; growth: number; rating_gain: number; hidden_share: number | null;
   priority_score: number; evidence: { review_id: number; quote: string }[];

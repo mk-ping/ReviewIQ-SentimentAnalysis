@@ -39,3 +39,9 @@ MIN_VAL_PER_GROUP = 100   # a route group with fewer validation reviews uses equ
 
 ASPECT_SIM = 0.35         # a sentence gets every aspect whose cosine similarity is at least this (recheck for multilingual SBERT)
 SBERT_EN_MODEL = "sentence-transformers/all-MiniLM-L6-v2"   # English sentences; others use EMBED_MODEL
+
+ISSUE_MIN_SENTENCES = 30  # an aspect needs this many problem sentences before KMeans runs; fewer become one 'few sentences' issue
+ISSUE_K_MIN = 2           # KMeans k range, the silhouette score picks k
+ISSUE_K_MAX = 4
+ISSUE_RARE_STD = 2.0      # a sentence farther than mean + this many std from its cluster centre is a rare complaint
+KMEANS_SEED = 42

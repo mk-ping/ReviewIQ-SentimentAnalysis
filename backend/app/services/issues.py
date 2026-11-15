@@ -6,18 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
 from app.models import Aspect, Issue, IssuePriority, IssueReview, Review, ReviewAspect, ReviewAspectRun
+from app.services import issue_cluster as IC
 from app.services.embeddings import embed
-
-
-def cluster(texts: list[str]) -> list[int]:
-    if len(texts) < 2:
-        return [0] * len(texts)
-    from sklearn.cluster import AgglomerativeClustering
-
-    labels = AgglomerativeClustering(
-        n_clusters=None, distance_threshold=T.ISSUE_DISTANCE, metric="cosine", linkage="average"
-    ).fit_predict(embed(texts))
-    return [int(x) for x in labels]
+from app.services.sentence_aspects import sentiment_model_for
 
 
 def lift(rated: dict[int, float], ids: set[int]):
@@ -62,7 +53,7 @@ async def rebuild_issues(session: AsyncSession, ws: int) -> int:
     mentions = (
         await session.execute(
             select(ReviewAspect.review_id, ReviewAspect.aspect_id, ReviewAspect.term,
-                   ReviewAspect.evidence_span, ReviewAspect.sentiment)
+                   ReviewAspect.evidence_span, ReviewAspect.sentiment, Review.language)
             .join(Review, Review.review_id == ReviewAspect.review_id)
             .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, neg)
             .order_by(ReviewAspect.review_id)
@@ -82,19 +73,33 @@ async def rebuild_issues(session: AsyncSession, ws: int) -> int:
     for m in mentions:
         by_aspect.setdefault(m[1], []).append(m)
 
-    found = []
-    for aid, ms in by_aspect.items():
-        labels = await asyncio.to_thread(cluster, [m[3] for m in ms])
-        groups: dict[int, list] = {}
-        for lab, m in zip(labels, ms):
-            groups.setdefault(lab, []).append(m)
-        for g in groups.values():
-            best: dict[int, tuple] = {}
-            for m in g:  # one mention per review: keep the most negative
-                if m[0] not in best or m[4] < best[m[0]][4]:
-                    best[m[0]] = m
-            if len(best) >= T.ISSUE_MIN_REVIEWS:
-                found.append((aid, list(best.values())))
+    found = []   # (aspect_id, mentions, keywords or None, few_sentences)
+    for aid, ms_all in by_aspect.items():
+        by_lang: dict[bool, list] = {True: [], False: []}
+        for m in ms_all:
+            by_lang[sentiment_model_for(m[5]) == "roberta"].append(m)
+        for english, ms in by_lang.items():
+            if not ms:
+                continue
+            if len(ms) >= T.ISSUE_MIN_SENTENCES:
+                model = T.SBERT_EN_MODEL if english else T.EMBED_MODEL
+                X = await asyncio.to_thread(embed, [m[3] for m in ms], model)
+                labels, centers = await asyncio.to_thread(IC.cluster_kmeans, X)
+                rare = IC.rare_flags(X, labels, centers)
+                kws = IC.c_tfidf([m[3] for m in ms], labels)
+                few = False
+            else:  # small-data rule: one issue for the whole aspect, named by its top keywords
+                labels, rare, kws, few = [0] * len(ms), [False] * len(ms), {}, True
+            groups: dict[int, list] = {}
+            for lab, r, m in zip(labels, rare, ms):
+                groups.setdefault(lab, []).append((*m[:5], r))
+            for lab, g in groups.items():
+                best: dict[int, tuple] = {}
+                for m in g:  # one mention per review: keep the most negative
+                    if m[0] not in best or m[4] < best[m[0]][4]:
+                        best[m[0]] = m
+                if len(best) >= T.ISSUE_MIN_REVIEWS:
+                    found.append((aid, list(best.values()), kws.get(lab) or None, few))
 
     await session.execute(delete(Issue).where(Issue.workspace_id == ws))
     if not found or total == 0:
@@ -105,11 +110,11 @@ async def rebuild_issues(session: AsyncSession, ws: int) -> int:
              (await session.execute(select(Aspect.aspect_id, Aspect.name).where(Aspect.workspace_id == ws))).all()}
 
     built = []
-    for aid, ms in found:
+    for aid, ms, ckw, few in found:
         ids = {m[0] for m in ms}
-        kw = [t for t, _ in Counter(m[2].lower() for m in ms if m[2]).most_common(3)]
+        kw = ckw or [t for t, _ in Counter(m[2].lower() for m in ms if m[2]).most_common(3)]
         label = f"{names[aid]}: {', '.join(kw[:2])}" if kw else names[aid]
-        obj = Issue(workspace_id=ws, aspect_id=aid, name=label[:200], keywords=kw, n_reviews=len(ids))
+        obj = Issue(workspace_id=ws, aspect_id=aid, name=label[:200], keywords=kw, n_reviews=len(ids), few_sentences=few)
         session.add(obj)
         res = lift(rated, ids)
         gain = (res[1] - res[0]) if res else 0.0
@@ -124,7 +129,7 @@ async def rebuild_issues(session: AsyncSession, ws: int) -> int:
 
     top = max(b[7] for b in built) or 1.0
     await session.execute(insert(IssueReview), [
-        {"issue_id": obj.issue_id, "review_id": m[0], "evidence_span": m[3], "sentiment": m[4]}
+        {"issue_id": obj.issue_id, "review_id": m[0], "evidence_span": m[3], "sentiment": m[4], "is_rare": m[5]}
         for obj, ms, *_ in built for m in ms
     ])
     await session.execute(insert(IssuePriority), [

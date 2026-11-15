@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +17,7 @@ class Issue(Base):
     name: Mapped[str] = mapped_column(String(200))
     keywords: Mapped[list] = mapped_column(JSONB)
     n_reviews: Mapped[int] = mapped_column(Integer)
+    few_sentences: Mapped[bool] = mapped_column(Boolean, server_default="false")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -28,6 +29,7 @@ class IssueReview(Base):
     review_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("review.review_id", ondelete="CASCADE"), primary_key=True)
     evidence_span: Mapped[str | None] = mapped_column(Text)
     sentiment: Mapped[float] = mapped_column(Float)
+    is_rare: Mapped[bool] = mapped_column(Boolean, server_default="false")
 
 
 class IssuePriority(Base):

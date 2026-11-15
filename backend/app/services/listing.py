@@ -84,13 +84,13 @@ async def judge(client: httpx.AsyncClient, claim: str, sentence: str):
 
 def _best_sentences(claim: str, rows) -> list[tuple]:
     """rows: (review_id, text). Returns (review_id, sentence, similarity) for the sentence closest to the claim."""
-    q = embed([claim])[0]
+    q = embed([claim], T.SBERT_EN_MODEL)[0]
     out = []
     for rid, txt in rows:
         parts = [p.strip() for p in re.split(r"[.!?;\n]+", txt or "") if len(p.strip()) >= 3]
         if not parts:
             continue
-        sims = embed(parts) @ q
+        sims = embed(parts, T.SBERT_EN_MODEL) @ q
         i = int(sims.argmax())
         if float(sims[i]) >= T.LISTING_MIN_SIM:
             out.append((rid, parts[i][:400], float(sims[i])))
@@ -98,12 +98,12 @@ def _best_sentences(claim: str, rows) -> list[tuple]:
 
 
 async def collect_evidence(session: AsyncSession, ws: int, product_id: int, claim: str):
-    q = (await asyncio.to_thread(embed, [claim]))[0]
+    q = (await asyncio.to_thread(embed, [claim], T.SBERT_EN_MODEL))[0]
     vec = "[" + ",".join(f"{float(x):.6f}" for x in q) + "]"
     await session.execute(text("SET LOCAL hnsw.ef_search = 100"))
     rows = (await session.execute(text("""
         SELECT r.review_id, r.text_clean FROM review_embedding e JOIN review r ON r.review_id = e.review_id
-        WHERE r.workspace_id = :ws AND r.product_id = :pid AND r.spam_score <= :spam
+        WHERE r.workspace_id = :ws AND r.product_id = :pid AND r.spam_score <= :spam AND e.model = :m
         ORDER BY e.embedding <=> CAST(:q AS vector) LIMIT :k"""),
-        {"ws": ws, "pid": product_id, "spam": T.SPAM_MAX, "q": vec, "k": T.LISTING_TOP_K})).all()
+        {"ws": ws, "pid": product_id, "spam": T.SPAM_MAX, "q": vec, "k": T.LISTING_TOP_K, "m": T.SBERT_EN_MODEL})).all()
     return await asyncio.to_thread(_best_sentences, claim, [(r[0], r[1]) for r in rows])

@@ -19,7 +19,7 @@ async def list_issues(session: AsyncSession = Depends(get_session)):
     ws = await _ws(session)
     rows = (
         await session.execute(
-            select(Issue.issue_id, Issue.name, Aspect.name, Issue.keywords, Issue.n_reviews,
+            select(Issue.issue_id, Issue.name, Aspect.name, Issue.keywords, Issue.n_reviews, Issue.few_sentences,
                    IssuePriority.frequency, IssuePriority.severity, IssuePriority.growth,
                    IssuePriority.rating_gain, IssuePriority.hidden_share, IssuePriority.priority_score)
             .join(IssuePriority, IssuePriority.issue_id == Issue.issue_id)
@@ -40,11 +40,17 @@ async def list_issues(session: AsyncSession = Depends(get_session)):
         for iid, rid, span in quotes:
             if len(ev.setdefault(iid, [])) < 3:
                 ev[iid].append({"review_id": rid, "quote": span})
+    rare: dict[int, int] = {}
+    if rows:
+        rare = dict((await session.execute(
+            select(IssueReview.issue_id, func.count()).where(IssueReview.is_rare.is_(True),
+                IssueReview.issue_id.in_([r[0] for r in rows])).group_by(IssueReview.issue_id))).all())
     return {"issues": [
         {"issue_id": i, "name": n, "aspect": a, "keywords": kw, "reviews": nr, "low_sample": nr < T.LOW_SAMPLE,
          "frequency": f, "severity": s, "growth": g, "rating_gain": rg, "hidden_share": hs,
-         "priority_score": ps, "evidence": ev.get(i, [])}
-        for i, n, a, kw, nr, f, s, g, rg, hs, ps in rows
+         "priority_score": ps, "evidence": ev.get(i, []),
+         "few_sentences": few, "rare_reviews": rare.get(i, 0)}
+        for i, n, a, kw, nr, few, f, s, g, rg, hs, ps in rows
     ]}
 
 

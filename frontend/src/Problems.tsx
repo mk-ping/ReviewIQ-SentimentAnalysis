@@ -64,6 +64,8 @@ export default function Problems() {
                   <span className="font-medium">{i.name} <span className="text-slate-400">({i.aspect})</span></span>
                   <span className="text-slate-500">priority {num(i.priority_score, 0)} | {i.reviews} reviews
                     {i.low_sample && <span className="ml-1 text-amber-600">few reviews</span>}
+                    {i.few_sentences && <span className="ml-1 text-amber-600">few sentences</span>}
+                    {(i.rare_reviews ?? 0) > 0 && <span className="ml-1 text-slate-500">{i.rare_reviews} rare</span>}
                     {i.hidden_share != null && ` | ${(i.hidden_share * 100).toFixed(0)}% hidden in 4-5 star reviews`}</span>
                 </div>
                 <ul className="mt-1 space-y-0.5 text-slate-600">
