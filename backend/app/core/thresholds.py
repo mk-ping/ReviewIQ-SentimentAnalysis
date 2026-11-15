@@ -34,3 +34,5 @@ LISTING_CONTRADICT = 0.30 # support share at or below: contradicted
 SPIKE_Z = 2.5             # weekly count this many std above earlier weeks raises an alert
 SPIKE_MIN_WEEKS = 4       # earlier weeks needed before any alert can fire
 SPIKE_MIN_COUNT = 5       # latest week needs at least this many complaints
+
+MIN_VAL_PER_GROUP = 100   # a route group with fewer validation reviews uses equal ensemble weights

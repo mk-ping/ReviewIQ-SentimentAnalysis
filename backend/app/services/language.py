@@ -21,7 +21,7 @@ def _get_detector():
     if _detector is None:
         L = Language
         _detector = LanguageDetectorBuilder.from_languages(
-            L.ENGLISH, L.HINDI, L.SPANISH, L.FRENCH, L.GERMAN, L.PORTUGUESE, L.ITALIAN, L.ARABIC,
+            L.ENGLISH, L.HINDI, L.SPANISH, L.FRENCH, L.GERMAN, L.PORTUGUESE, L.ITALIAN, L.ARABIC, L.DUTCH,
         ).build()
     return _detector
 

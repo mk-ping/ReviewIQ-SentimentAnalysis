@@ -21,6 +21,9 @@ def configured(cfg=settings) -> list[dict]:
     if cfg.cardiff_model:
         out.append({"name": cfg.cardiff_model, "source": cfg.cardiff_model, "version": "pretrained",
                     "role": "optional", "languages": None})
+    for name in [m.strip() for m in (getattr(cfg, "extra_models", "") or "").split(",") if m.strip()]:
+        if all(m["name"] != name for m in out):
+            out.append({"name": name, "source": name, "version": "pretrained", "role": "optional", "languages": None})
     return out
 
 

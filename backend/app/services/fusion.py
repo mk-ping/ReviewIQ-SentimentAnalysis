@@ -1,9 +1,11 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
-from app.models import Prediction, Review, ReviewScore
+from app.models import MLModel, Prediction, Review, ReviewScore
+from app.services import sentiment
+from app.services.routing import MEMBERS, group_of
 
 
 def _label(n: float, u: float, p: float) -> str:
@@ -11,44 +13,67 @@ def _label(n: float, u: float, p: float) -> str:
     return "neg" if conf == n else ("neu" if conf == u else "pos")
 
 
-def fuse(p_neg: float, p_neu: float, p_pos: float, expected: float | None, stars: float | None, agree: bool = True) -> dict:
+def ensemble(preds: list[tuple], weights: list[float]) -> tuple[float, float, float]:
+    """Weighted average of probabilities: sum(w x p) / sum(w)."""
+    tot = sum(weights)
+    return tuple(sum(w * p[i] for w, p in zip(weights, preds)) / tot for i in range(3))
+
+
+def fuse(p_neg: float, p_neu: float, p_pos: float, expected: float | None, stars: float | None) -> dict:
     conf = max(p_neg, p_neu, p_pos)
     out = {"text_label": _label(p_neg, p_neu, p_pos), "confidence": round(conf, 4), "fused_stars": None,
            "pred_stars": expected, "star_gap": None, "mismatch_type": None}
     if stars is None:
         return out
-    text = p_pos - p_neg
+    text_score = p_pos - p_neg
     star_score = (stars - 3) / 2
     w = min(max(conf, T.FUSION_W_MIN), T.FUSION_W_MAX)
-    out["fused_stars"] = round(3 + 2 * (w * text + (1 - w) * star_score), 3)
+    out["fused_stars"] = round(3 + 2 * (w * text_score + (1 - w) * star_score), 3)
     if expected is not None:
         out["star_gap"] = round(expected - stars, 3)
-    if agree and conf >= T.MISMATCH_MIN_CONF and abs(text - star_score) >= T.MISMATCH_DIFF:
-        out["mismatch_type"] = "underrated" if text > star_score else "overrated"
+    if conf >= T.MISMATCH_MIN_CONF and abs(text_score - star_score) >= T.MISMATCH_DIFF:
+        out["mismatch_type"] = "underrated" if text_score > star_score else "overrated"
     return out
 
 
 async def score_batch(session: AsyncSession, batch_id: int) -> int:
-    """Averages every model's probabilities per review. A mismatch needs all models to agree on the label."""
+    """Per review: take the predictions of the models in its route group, average them with the group's weights
+    (equal weights when the group has fewer than 100 validation reviews), then fuse with the stars."""
+    reg = sentiment.registry()
+    key_of = {(c["name"], c["version"]): k for k, c in reg.items()}
+    mkey = {mid: key_of[(n, v)] for mid, n, v in
+            (await session.execute(select(MLModel.model_id, MLModel.name, MLModel.version))).all() if (n, v) in key_of}
+    wt: dict[tuple, float] = {}
+    for g, mid, w, nv in (await session.execute(text("SELECT route_group, model_id, weight, n_val FROM model_weight"))).all():
+        if mid in mkey and nv >= T.MIN_VAL_PER_GROUP:
+            wt[(g, mkey[mid])] = float(w)
     rows = (
         await session.execute(
-            select(Review.review_id, Review.rating_norm, Prediction.p_neg, Prediction.p_neu, Prediction.p_pos, Prediction.expected_stars)
+            select(Review.review_id, Review.rating_norm, Review.language, Prediction.model_id,
+                   Prediction.p_neg, Prediction.p_neu, Prediction.p_pos, Prediction.expected_stars)
             .join(Prediction, Prediction.review_id == Review.review_id)
             .where(Review.batch_id == batch_id)
         )
     ).all()
     by: dict[int, dict] = {}
-    for rid, st, n, u, p, e in rows:
-        by.setdefault(rid, {"stars": st, "preds": []})["preds"].append((n, u, p, e))
+    for rid, st, lang, mid, n, u, p, e in rows:
+        k = mkey.get(mid)
+        if k is None:
+            continue
+        d = by.setdefault(rid, {"stars": st, "group": group_of(lang), "preds": {}})
+        d["preds"][k] = (n, u, p, e)
     payload = []
     for rid, d in by.items():
-        ps = d["preds"]
-        k = len(ps)
-        n, u, p = (sum(x[i] for x in ps) / k for i in range(3))
-        es = [x[3] for x in ps if x[3] is not None]
-        e = sum(es) / len(es) if es else None
-        agree = len({_label(*x[:3]) for x in ps}) == 1
-        payload.append({"review_id": rid, **fuse(n, u, p, e, d["stars"], agree)})
+        g = d["group"]
+        keys = [k for k in d["preds"] if k in MEMBERS[g]]
+        if not keys:
+            continue
+        ws = [wt.get((g, k)) for k in keys]
+        if any(w is None for w in ws):
+            ws = [1.0] * len(keys)
+        n, u, p = ensemble([d["preds"][k][:3] for k in keys], ws)
+        expected = d["preds"]["nlptown"][3] if "nlptown" in keys else None
+        payload.append({"review_id": rid, **fuse(n, u, p, expected, d["stars"])})
     cols = ["text_label", "confidence", "fused_stars", "pred_stars", "star_gap", "mismatch_type"]
     for i in range(0, len(payload), 2000):
         stmt = pg_insert(ReviewScore)

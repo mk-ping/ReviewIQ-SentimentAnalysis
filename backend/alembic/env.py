@@ -22,7 +22,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-EXTERNAL_TABLES = {"review_embedding", "audit_log", "listing", "claim", "claim_evidence", "claim_verdict"}
+EXTERNAL_TABLES = {"review_embedding", "audit_log", "listing", "claim", "claim_evidence", "claim_verdict", "model_weight"}
 
 
 def include_object(obj, name, type_, reflected, compare_to):

@@ -22,4 +22,7 @@ assert [label_to_star(x) for x in ["1 star", "2 stars", "3 stars", "4 stars", "5
 assert [label_to_star(x) for x in ["Very Negative", "Negative", "Neutral", "Positive", "Very Positive"]] == [1, 2, 3, 4, 5]
 assert label_to_star("LABEL_9") is None
 assert [label_to_polarity(x) for x in ["negative", "neutral", "positive"]] == [0, 1, 2]
+ex = configured(NS(sentiment_model="p", star_model="s", cardiff_model="", extra_models=" x/one, y/two ,p"))
+assert [m["name"] for m in ex] == ["p", "s", "x/one", "y/two"], ex
+assert ex[2]["role"] == "optional" and runs_on(ex[2], "hi")
 print("model registry checks passed")

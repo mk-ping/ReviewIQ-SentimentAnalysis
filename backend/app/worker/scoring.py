@@ -1,7 +1,6 @@
-
 import asyncio
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.session import SessionLocal
@@ -9,14 +8,14 @@ from app.models import MLModel, Prediction, Review
 from app.services import sentiment
 from app.services.fusion import score_batch
 from app.services.queue import set_progress
+from app.services.routing import MEMBERS, group_of
 
 CHUNK = 32
 
 
 async def _model_id(s, cfg: dict) -> int:
     await s.execute(
-        pg_insert(MLModel)
-        .values(name=cfg["name"], version=cfg["version"], kind="sentiment")
+        pg_insert(MLModel).values(name=cfg["name"], version=cfg["version"], kind=cfg["kind"])
         .on_conflict_do_nothing(index_elements=["name", "version"])
     )
     await s.commit()
@@ -24,40 +23,36 @@ async def _model_id(s, cfg: dict) -> int:
 
 
 async def handle_score_all(job_id: int, batch_id: int) -> None:
-    cfgs = sentiment.configured()
+    reg = sentiment.registry()
     todo = []
     async with SessionLocal() as s:
-        n_reviews = await s.scalar(select(func.count()).select_from(Review).where(Review.batch_id == batch_id)) or 0
-        if n_reviews == 0:
+        revs = (await s.execute(select(Review.review_id, Review.text_clean, Review.language)
+                                .where(Review.batch_id == batch_id).order_by(Review.review_id))).all()
+        if not revs:
             raise RuntimeError("This batch has no reviews to score.")
-        for cfg in cfgs:
+        for key, cfg in reg.items():
+            if not sentiment.available(key):
+                continue
             mid = await _model_id(s, cfg)
-            q = (
-                select(Review.review_id, Review.text_clean)
-                .outerjoin(Prediction, and_(Prediction.review_id == Review.review_id, Prediction.model_id == mid))
-                .where(Review.batch_id == batch_id, Prediction.review_id.is_(None))
-                .order_by(Review.review_id)
-            )
-            if cfg.get("languages"):  # language_filter: only languages this model was trained on
-                q = q.where(Review.language.in_(cfg["languages"]))
-            pending = (await s.execute(q)).all()
-            todo.append((cfg, mid, pending))
+            have = set((await s.execute(
+                select(Prediction.review_id).join(Review, Review.review_id == Prediction.review_id)
+                .where(Review.batch_id == batch_id, Prediction.model_id == mid))).scalars().all())
+            pending = [(rid, t) for rid, t, lang in revs if key in MEMBERS[group_of(lang)] and rid not in have]
+            if pending:
+                todo.append((key, mid, pending))
 
     total = sum(len(p) for _, _, p in todo)
-    done = 0
-    for idx, (cfg, mid, pending) in enumerate(todo):
-        if not pending:
-            continue
+    done = ran = 0
+    for key, mid, pending in todo:
         try:
-            await asyncio.to_thread(sentiment.get_scorer, cfg)
+            await asyncio.to_thread(sentiment.get_scorer, key)
         except Exception as e:
-            if idx == 0:
-                raise  # the primary model must work
-            print(f"[score] skipping {cfg['name']}: {type(e).__name__}: {str(e)[:200]}")
+            print(f"[score] skipping {key}: {type(e).__name__}: {str(e)[:200]}")
             continue
+        ran += 1
         for i in range(0, len(pending), CHUNK):
             part = pending[i : i + CHUNK]
-            results = await asyncio.to_thread(sentiment.predict, [t for _, t in part], CHUNK, cfg["name"])
+            results = await asyncio.to_thread(sentiment.predict, [t for _, t in part], CHUNK, key)
             rows = [{"review_id": rid, "model_id": mid, "p_neg": a, "p_neu": b, "p_pos": c, "expected_stars": e}
                     for (rid, _), (a, b, c, e) in zip(part, results)]
             async with SessionLocal() as s:
@@ -65,5 +60,7 @@ async def handle_score_all(job_id: int, batch_id: int) -> None:
                 await s.commit()
                 done += len(part)
                 await set_progress(s, job_id, int(100 * done / max(total, 1)))
+    if todo and ran == 0:
+        raise RuntimeError("No sentiment model could be loaded.")
     async with SessionLocal() as s:
-        await score_batch(s, batch_id)
+        await score_batch(s, batch_id)
