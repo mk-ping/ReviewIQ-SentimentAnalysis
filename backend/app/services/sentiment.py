@@ -5,9 +5,10 @@ import joblib
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+from app.core import thresholds as T
 from app.core.config import settings
 
-MAX_LEN = 256
+MAX_LEN = T.SENTIMENT_MAX_TOKENS
 DEFAULT = "roberta"
 _device = "cuda" if torch.cuda.is_available() else "cpu"
 _cache: dict = {}

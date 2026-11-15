@@ -4,6 +4,9 @@
 Dates are 2026. Each line is one step of the build; the git log has the detail.
 
 ## 15 Nov
+- Listing vs Reality page, aspect smoothing, Hidden Dissatisfaction precision check (steps 23 and 24).
+- Spam reviews are no longer scored by the models; sentiment max tokens is 128; the results page notes uploads under 300 rated reviews.
+- Fine-tuning and zero-shot commands retired from ml/reviewiq_train.py; only the data build remains.
 - Final pipeline document applied: cleaning and spam rules (spam line 0.7), route groups, RoBERTa / nlptown / Twitter XLM-R models,
   weighted ensemble from validation macro F1, TF-IDF baseline trained by us, original confidence-based mismatch rule.
 - Sentence-level aspects (pysbd, SBERT seed phrases, keyword fallback); per-aspect KMeans issues with silhouette and c-TF-IDF;

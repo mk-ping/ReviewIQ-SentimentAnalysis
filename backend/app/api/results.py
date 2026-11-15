@@ -110,7 +110,7 @@ async def batch_results(batch_id: int, session: AsyncSession = Depends(get_sessi
                    "examples": [{"review_id": i, "stars": st, "text": tx, "phrase": ev, "aspect": an}
                                 for i, st, tx, ev, an in hid_rows]},
         "issues": issues,
-        "notes": ["The text-adjusted average is not smoothed. GET /true-rating gives the smoothed version with an interval.",
+        "notes": (["Fewer than %d rated reviews in this upload, so the stored default ensemble weights are used (equal weights where a route group has under %d validation reviews)." % (T.MIN_RATED_FOR_VAL_WEIGHTS, T.MIN_VAL_PER_GROUP)] if k["rated"] < T.MIN_RATED_FOR_VAL_WEIGHTS else []) + ["The text-adjusted average is not smoothed. GET /true-rating gives the smoothed version with an interval.",
                   "Issues cover the whole workspace, not only this upload.",
                   "Aspect results come from a local language model and are not yet measured against hand labels."],
     }

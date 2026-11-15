@@ -47,3 +47,6 @@ ISSUE_RARE_STD = 2.0      # a sentence farther than mean + this many std from it
 KMEANS_SEED = 42
 
 ASPECT_M = 10             # aspect heatmap smoothing: (n x cell mean + m x overall mean) / (n + m)
+
+MIN_RATED_FOR_VAL_WEIGHTS = 300  # fewer rated reviews in an upload: stored default weights apply and the results page says so
+SENTIMENT_MAX_TOKENS = 128       # document section 13: max tokens 128, batch size 32

@@ -26,3 +26,4 @@ sentencepiece==0.2.3
 tiktoken==0.14.0
 protobuf==7.36.2
 pysbd==0.3.4
+huggingface-hub==1.33.0

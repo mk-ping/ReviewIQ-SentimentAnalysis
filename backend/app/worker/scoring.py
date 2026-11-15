@@ -3,6 +3,7 @@ import asyncio
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.core import thresholds as T
 from app.db.session import SessionLocal
 from app.models import MLModel, Prediction, Review
 from app.services import sentiment
@@ -27,7 +28,7 @@ async def handle_score_all(job_id: int, batch_id: int) -> None:
     todo = []
     async with SessionLocal() as s:
         revs = (await s.execute(select(Review.review_id, Review.text_clean, Review.language)
-                                .where(Review.batch_id == batch_id).order_by(Review.review_id))).all()
+                                .where(Review.batch_id == batch_id, Review.spam_score <= T.SPAM_MAX).order_by(Review.review_id))).all()
         if not revs:
             raise RuntimeError("This batch has no reviews to score.")
         for key, cfg in reg.items():

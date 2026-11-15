@@ -42,3 +42,10 @@ These follow the final pipeline document (Nov 14). The older model-swap notes ar
 
 ## Retired
 - The GPU fine-tuning path. ml/reviewiq_train.py is kept only for its build and baseline commands (public-source data build for TF-IDF training and the held-out evaluation).
+
+## Deviations from the final pipeline document
+- Issue growth compares the later half of dated reviews with the earlier half (median split, smoothed), not the last 12 months, so small uploads still get a value. Revisit when a workspace spans more than a year.
+- Issue discovery needs 2 reviews per issue (ISSUE_MIN_REVIEWS) at demo scale; raise to 5 on real data.
+- The local LLM is qwen2.5:3b and is used only for issue claims in Listing vs Reality and the column-detection fallback, never for aspect tags.
+- The aspect list is fixed (7 aspects, 6 seeds each); the per-business editable list is not built.
+- Baseline retraining on a workspace's own data (2,000 rated reviews) is not built; the public-source baseline is used.
