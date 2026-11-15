@@ -182,6 +182,7 @@ async def run_ingest(session: AsyncSession, batch: UploadBatch, mapping: dict[st
             {"workspace_id": ws, "product_id": pid[e["product"]], "batch_id": batch.batch_id,
              "text_clean": e["text_clean"], "rating_raw": e["rating_raw"], "rating_norm": e["rating_norm"],
              "review_date": e["review_date"], "source": e["source"], "language": e["language"], "content_hash": e["content_hash"],
+             "split": "validation" if int(e["content_hash"][:8], 16) % 3 == 0 else "test",
              "spam_score": e["spam_score"], "dup_count": e["dup_count"], "extra": e["extra"]}
             for e in new
         ]

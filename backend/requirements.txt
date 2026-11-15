@@ -25,3 +25,6 @@ pytesseract
 reportlab
 scipy
 emoji
+sentencepiece
+tiktoken
+protobuf

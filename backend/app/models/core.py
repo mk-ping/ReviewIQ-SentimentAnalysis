@@ -54,6 +54,7 @@ class Review(Base):
     language: Mapped[str | None] = mapped_column(String(20))
     source: Mapped[str | None] = mapped_column(String(100))
     content_hash: Mapped[str] = mapped_column(String(64))
+    split: Mapped[str | None] = mapped_column(String(10))
     spam_score: Mapped[float] = mapped_column(Float, server_default="0")
     dup_count: Mapped[int] = mapped_column(Integer, server_default="1")
     extra: Mapped[dict] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))

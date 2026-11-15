@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 
+import joblib
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
@@ -25,8 +26,10 @@ def registry() -> dict[str, dict]:
 
 
 def available(key: str) -> bool:
-    """The TF-IDF baseline is trained in Fix 3, so it is not available yet."""
-    return key in registry() and key != "tfidf"
+    """The TF-IDF baseline is available once scripts/train_tfidf.py has saved its file."""
+    if key == "tfidf":
+        return Path(settings.tfidf_path).exists()
+    return key in registry()
 
 
 def _star(label: str):
@@ -80,11 +83,26 @@ class Scorer:
         return out
 
 
-def get_scorer(key: str) -> Scorer:
+class TfidfScorer:
+    mapping = {"negative": 0, "neutral": 1, "positive": 2}
+
+    def __init__(self):
+        self.pipe = joblib.load(settings.tfidf_path)
+
+    def predict(self, texts, batch_size: int = 32):
+        cls = list(self.pipe.classes_)
+        out = []
+        for row in self.pipe.predict_proba(texts):
+            d = dict(zip(cls, row))
+            out.append((float(d.get("neg", 0)), float(d.get("neu", 0)), float(d.get("pos", 0)), None))
+        return out
+
+
+def get_scorer(key: str):
     if key not in _cache:
         if not available(key):
             raise RuntimeError(f"Model '{key}' is not available yet.")
-        _cache[key] = Scorer(registry()[key]["name"])
+        _cache[key] = TfidfScorer() if key == "tfidf" else Scorer(registry()[key]["name"])
     return _cache[key]
 
 
