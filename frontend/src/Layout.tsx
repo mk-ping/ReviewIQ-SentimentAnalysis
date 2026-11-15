@@ -14,6 +14,7 @@ const PAGES = [
   { to: "/upload", label: "Upload and Data", ready: true },
   { to: "/sentiment", label: "Sentiment", ready: true },
   { to: "/label", label: "Gold Labels and Evaluation", ready: true },
+  { to: "/reports", label: "Reports and Replies", ready: true },
 ];
 
 function FilterBar() {

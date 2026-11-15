@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+﻿from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +13,7 @@ from app.api.insights import router as insights_router
 from app.api.issues import router as issues_router
 from app.api.jobs import router as jobs_router
 from app.api.mapping import router as mapping_router
+from app.api.replies import router as replies_router
 from app.api.reports import router as reports_router
 from app.api.results import router as results_router
 from app.api.sentiment import router as sentiment_router
@@ -43,6 +44,7 @@ app.include_router(actions_router)
 app.include_router(results_router)
 app.include_router(sentiment_router)
 app.include_router(reports_router)
+app.include_router(replies_router)
 
 
 @app.get("/")

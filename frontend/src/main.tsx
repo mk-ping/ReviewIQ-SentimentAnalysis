@@ -12,6 +12,7 @@ import Explorer from "./Explorer";
 import Upload from "./Upload";
 import Sentiment from "./Sentiment";
 import Label from "./Label";
+import Reports from "./Reports";
 import Trends from "./Trends";
 import "./index.css";
 
@@ -31,6 +32,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="upload" element={<Upload />} />
             <Route path="sentiment" element={<Sentiment />} />
             <Route path="label" element={<Label />} />
+            <Route path="reports" element={<Reports />} />
             <Route path="trends" element={<Trends />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>
