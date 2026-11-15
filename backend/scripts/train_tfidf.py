@@ -4,6 +4,7 @@ Run from backend:  python -m scripts.train_tfidf
 Extra training data: put CSV files with a text column and a 1-5 rating column in ../data/external/."""
 import asyncio
 import csv
+import json
 import re
 from pathlib import Path
 
@@ -49,6 +50,26 @@ def external_rows():
     return out
 
 
+def jsonl_rows():
+    """Training rows built by ml/reviewiq_train.py build: stars map to neg/neu/pos, polarity rows keep their label."""
+    p = Path("../ml/data/train.jsonl")
+    out = []
+    if not p.exists():
+        return out
+    for line in p.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        r = json.loads(line)
+        if len(r["text"].split()) < 2:
+            continue
+        if r["star"] >= 0:
+            out.append((r["text"], E.stars_to_label(r["star"] + 1)))
+        elif r["pol"] >= 0:
+            out.append((r["text"], ("neg", "neu", "pos")[r["pol"]]))
+    print(f"ml/data/train.jsonl: {len(out)} rows")
+    return out
+
+
 async def main():
     async with SessionLocal() as s:
         mine = (await s.execute(text("""
@@ -59,7 +80,7 @@ async def main():
             WHERE split = 'validation' AND rating_norm IS NOT NULL AND spam_score <= :sp"""), {"sp": T.SPAM_MAX})).all()
     # Per the document: validation sets the weights, test is the reported set. Training uses neither.
     # So the database contributes no training rows; only external files train the model.
-    train = external_rows()
+    train = external_rows() + jsonl_rows()
     print(f"training rows from data/external: {len(train)}   (database reviews are held out)")
     if len(train) < 50:
         print("Too few training rows. Put at least a few hundred labelled reviews in ../data/external/ and run again.")
