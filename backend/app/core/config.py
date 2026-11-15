@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     xlmr_model: str = "cardiffnlp/twitter-xlm-roberta-base-sentiment"
     distil_model: str = ""  # multilingual DistilBERT: verify the Hub id, then set it here or in .env
     tfidf_path: str = "../ml/out/tfidf_lr.joblib"
-    extra_models: str = ""  # comma-separated Hugging Face ids to try as extra optional models
-    star_model: str = "nlptown/bert-base-multilingual-uncased-sentiment"  # empty string disables it
     llm_url: str = "http://127.0.0.1:11434"
     llm_model: str = "qwen2.5:3b"
     llm_timeout: float = 180.0
