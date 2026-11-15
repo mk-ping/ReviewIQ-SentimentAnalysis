@@ -89,8 +89,8 @@ async def run_ingest(session: AsyncSession, batch: UploadBatch, mapping: dict[st
         else:
             text_in = body or title
         text = clean_text(text_in)
-        if len(text) < 2:
-            issues.append(_issue(rn, "text", "Empty review text", "quarantined", cell(r, "text")))
+        if len(text.split()) < 2:
+            issues.append(_issue(rn, "text", "Review has fewer than 2 words", "quarantined", cell(r, "text")))
             continue
 
         rating_raw = cell(r, "rating").strip()
