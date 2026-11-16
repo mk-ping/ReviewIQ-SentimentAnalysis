@@ -1,3 +1,81 @@
 @import "tailwindcss";
 
-body { @apply bg-slate-50 text-slate-900; font-family: system-ui, sans-serif; }
+/* Dark theme: the slate scale is inverted so every existing page re-skins without edits.
+   Two accents: violet and cyan. Green and red stay only for good and bad sentiment. */
+@theme {
+  --color-accent: #8b7bff;
+  --color-accent2: #22d3ee;
+
+  --color-slate-50: #07080b;
+  --color-slate-100: #171a22;
+  --color-slate-200: #232733;
+  --color-slate-300: #303545;
+  --color-slate-400: #6b7389;
+  --color-slate-500: #8a92a6;
+  --color-slate-600: #a7aebf;
+  --color-slate-700: #c3c9d6;
+  --color-slate-800: #dde1ea;
+  --color-slate-900: #f2f4f8;
+
+  --color-indigo-50: #1b1640;
+  --color-indigo-100: #261f58;
+  --color-indigo-500: #8b7bff;
+  --color-indigo-600: #7566fa;
+  --color-indigo-700: #b3a8ff;
+
+  --color-red-50: #2a1118;
+  --color-red-100: #3a1620;
+  --color-red-600: #fb7185;
+  --color-red-700: #fb8a9a;
+  --color-red-800: #fda4af;
+  --color-amber-50: #2a2010;
+  --color-amber-100: #3a2c12;
+  --color-amber-600: #f5b83d;
+  --color-amber-700: #f8c860;
+  --color-amber-800: #fbd988;
+  --color-emerald-100: #0e2b22;
+  --color-emerald-600: #0f9f6e;
+  --color-emerald-700: #4ade9d;
+  --color-emerald-800: #86efc0;
+  --color-green-100: #0e2b22;
+  --color-green-800: #86efc0;
+  --color-purple-100: #261b46;
+  --color-purple-800: #d2c2ff;
+  --color-orange-100: #33200f;
+  --color-orange-800: #fdba74;
+}
+
+:root { color-scheme: dark; }
+
+/* Tailwind v4 draws borders in currentColor unless told otherwise */
+@layer base {
+  *, ::after, ::before { border-color: var(--color-slate-200); }
+}
+
+/* white cannot be remapped in the theme (text-white needs it), so cards get the surface colour here */
+.bg-white { background-color: #0f1117; }
+
+body {
+  @apply text-slate-900;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(139, 123, 255, 0.10), transparent 60%),
+    radial-gradient(700px 400px at -5% 0%, rgba(34, 211, 238, 0.06), transparent 60%),
+    var(--color-slate-50);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html { scroll-behavior: smooth; }
+option { background: #0f1117; color: #f2f4f8; }
+::selection { background: rgba(139, 123, 255, 0.4); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-slate-300); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }

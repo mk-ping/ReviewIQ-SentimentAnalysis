@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.actions import router as actions_router
+from app.api.auth import require_user, router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.evaluation import router as evaluation_router
 from app.api.explorer import router as explorer_router
@@ -25,26 +26,29 @@ app = FastAPI(title=settings.app_name, version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(uploads_router)
-app.include_router(mapping_router)
-app.include_router(ingest_router)
-app.include_router(listing_router)
-app.include_router(insights_router)
-app.include_router(jobs_router)
-app.include_router(issues_router)
-app.include_router(dashboard_router)
-app.include_router(explorer_router)
-app.include_router(evaluation_router)
-app.include_router(actions_router)
-app.include_router(results_router)
-app.include_router(sentiment_router)
-app.include_router(reports_router)
-app.include_router(replies_router)
+protected = [Depends(require_user)]   # every data route needs a logged-in user (settings.auth_required)
+app.include_router(auth_router)
+app.include_router(uploads_router, dependencies=protected)
+app.include_router(mapping_router, dependencies=protected)
+app.include_router(ingest_router, dependencies=protected)
+app.include_router(listing_router, dependencies=protected)
+app.include_router(insights_router, dependencies=protected)
+app.include_router(jobs_router, dependencies=protected)
+app.include_router(issues_router, dependencies=protected)
+app.include_router(dashboard_router, dependencies=protected)
+app.include_router(explorer_router, dependencies=protected)
+app.include_router(evaluation_router, dependencies=protected)
+app.include_router(actions_router, dependencies=protected)
+app.include_router(results_router, dependencies=protected)
+app.include_router(sentiment_router, dependencies=protected)
+app.include_router(reports_router, dependencies=protected)
+app.include_router(replies_router, dependencies=protected)
 
 
 @app.get("/")

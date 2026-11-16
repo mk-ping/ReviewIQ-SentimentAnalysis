@@ -37,6 +37,9 @@ def variants():
 def main() -> int:
     failures = []
     with httpx.Client(base_url=BASE, timeout=300) as c:
+        cred = {"email": "fuzz@reviewiq.local", "password": "fuzz-password-1", "name": "Fuzz"}
+        if c.post("/auth/signup", json=cred).status_code == 409:
+            c.post("/auth/login", json=cred)
         for name, data in variants():
             u = c.post("/uploads", files={"file": (name, data)})
             line = f"{name:24} upload {u.status_code}"

@@ -82,7 +82,7 @@ function Results() {
     yAxis: { type: "value", min: 0, max: 1 },
     series: [
       { name: "Claimed confidence", type: "line", data: cal.bins.map((b) => b.mean_confidence), itemStyle: { color: "#94a3b8" }, lineStyle: { type: "dashed" } },
-      { name: "Actually right", type: "bar", data: cal.bins.map((b) => b.accuracy), itemStyle: { color: "#4f46e5" } },
+      { name: "Actually right", type: "bar", data: cal.bins.map((b) => b.accuracy), itemStyle: { color: "#8b7bff" } },
     ],
   } : null;
 

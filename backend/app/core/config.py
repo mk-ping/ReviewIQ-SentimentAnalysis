@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     llm_model: str = "qwen2.5:3b"
     llm_timeout: float = 180.0
     tesseract_cmd: str = ""
+    # login: set SECRET_KEY in .env to a long random string; AUTH_REQUIRED=false turns the login wall off
+    secret_key: str = "dev-only-change-me"
+    auth_required: bool = True
+    session_hours: int = 168
+    cookie_secure: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

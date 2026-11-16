@@ -1,5 +1,6 @@
 export async function api<T>(path: string): Promise<T> {
   const r = await fetch("/api" + path);
+  if (r.status === 401) window.dispatchEvent(new Event("reviewiq:401"));
   if (!r.ok) throw new Error(`${r.status} ${path}`);
   return r.json();
 }
@@ -41,6 +42,7 @@ export async function send<T>(method: "POST" | "PATCH", path: string, body?: unk
   const r = await fetch("/api" + path, {
     method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body),
   });
+  if (r.status === 401 && !path.startsWith("/auth/")) window.dispatchEvent(new Event("reviewiq:401"));
   if (!r.ok) {
     let msg = `${r.status} ${path}`;
     try { msg = (await r.json()).detail ?? msg; } catch { /* keep default */ }

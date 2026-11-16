@@ -8,6 +8,7 @@ x-backend: &backend
     UPLOAD_DIR: /data/uploads
     HF_HOME: /models
     TFIDF_PATH: /ml/out/tfidf_lr.joblib
+    SECRET_KEY: ${SECRET_KEY:-change-me-in-a-real-deployment}
   extra_hosts:
     - "host.docker.internal:host-gateway"
   volumes:

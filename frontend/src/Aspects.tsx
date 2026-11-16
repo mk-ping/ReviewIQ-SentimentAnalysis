@@ -23,7 +23,7 @@ export default function Aspects() {
     yAxis: { type: "category", data: rows.map((r) => r.aspect) },
     series: [{
       type: "bar",
-      data: rows.map((r) => ({ value: sm(r), itemStyle: { color: sm(r) < -0.25 ? "#dc2626" : sm(r) > 0.25 ? "#16a34a" : "#94a3b8" } })),
+      data: rows.map((r) => ({ value: sm(r), itemStyle: { color: sm(r) < -0.25 ? "#fb7185" : sm(r) > 0.25 ? "#34d399" : "#94a3b8" } })),
     }],
   };
 

@@ -35,7 +35,7 @@ export default function Home() {
     xAxis: { type: "category", data: dist.histogram.map((b) => b.stars + " star") },
     yAxis: { type: "value" },
     tooltip: { trigger: "axis" },
-    series: [{ type: "bar", data: dist.histogram.map((b) => b.count), itemStyle: { color: "#4f46e5" } }],
+    series: [{ type: "bar", data: dist.histogram.map((b) => b.count), itemStyle: { color: "#8b7bff" } }],
   } as const;
 
   return (

@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./Layout";
+import Landing from "./Landing";
+import AuthPage from "./AuthPage";
+import { AuthProvider, Protected } from "./auth";
 import Home from "./Home";
 import RatingVsText from "./RatingVsText";
 import Problems from "./Problems";
@@ -22,7 +25,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={client}>
       <BrowserRouter>
+        <AuthProvider>
         <Routes>
+          <Route path="welcome" element={<Landing />} />
+          <Route path="login" element={<AuthPage mode="login" />} />
+          <Route path="signup" element={<AuthPage mode="signup" />} />
+          <Route element={<Protected />}>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="rating-vs-text" element={<RatingVsText />} />
@@ -38,7 +46,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="trends" element={<Trends />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>
+          </Route>
         </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>

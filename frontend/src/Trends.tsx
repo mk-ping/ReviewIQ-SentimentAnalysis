@@ -39,13 +39,13 @@ export default function Trends() {
     xAxis: { type: "category", data: labels }, yAxis: { type: "value", min: 1, max: 5 },
     series: [
       { name: "Customer stars", type: "line", data: pts.map((p) => p.avg_rating), itemStyle: { color: "#94a3b8" } },
-      { name: "What the text supports", type: "line", data: pts.map((p) => p.avg_fused_rating), itemStyle: { color: "#4f46e5" } },
+      { name: "What the text supports", type: "line", data: pts.map((p) => p.avg_fused_rating), itemStyle: { color: "#8b7bff" } },
     ],
   };
   const sentOpt = {
     grid: { left: 45, right: 10, top: 20, bottom: 30 }, tooltip: { trigger: "axis" },
     xAxis: { type: "category", data: labels }, yAxis: { type: "value", min: -1, max: 1 },
-    series: [{ name: "Net sentiment", type: "bar", data: pts.map((p) => p.net_sentiment), itemStyle: { color: "#0f766e" } }],
+    series: [{ name: "Net sentiment", type: "bar", data: pts.map((p) => p.net_sentiment), itemStyle: { color: "#22d3ee" } }],
   };
   const volOpt = {
     grid: { left: 45, right: 10, top: 20, bottom: 30 }, tooltip: { trigger: "axis" },

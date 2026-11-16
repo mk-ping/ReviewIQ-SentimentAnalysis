@@ -53,7 +53,7 @@ export default function RatingVsText() {
     yAxis: { type: "value", min: 1, max: 5, name: "stars" },
     series: [
       { name: "Customer stars", type: "line", data: d.by_star.map((b) => b.stars), lineStyle: { type: "dashed" }, itemStyle: { color: "#94a3b8" } },
-      { name: "What the text says", type: "bar", data: d.by_star.map((b) => b.avg_text_stars), itemStyle: { color: "#4f46e5" } },
+      { name: "What the text says", type: "bar", data: d.by_star.map((b) => b.avg_text_stars), itemStyle: { color: "#8b7bff" } },
     ],
   };
 
