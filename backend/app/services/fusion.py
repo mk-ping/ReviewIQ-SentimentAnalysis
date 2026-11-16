@@ -4,13 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
 from app.models import MLModel, Prediction, Review, ReviewScore
-from app.services import sentiment
 from app.services.routing import MEMBERS, group_of
-
-
-def _label(n: float, u: float, p: float) -> str:
-    conf = max(n, u, p)
-    return "neg" if conf == n else ("neu" if conf == u else "pos")
 
 
 def ensemble(preds: list[tuple], weights: list[float]) -> tuple[float, float, float]:
@@ -20,8 +14,10 @@ def ensemble(preds: list[tuple], weights: list[float]) -> tuple[float, float, fl
 
 
 def fuse(p_neg: float, p_neu: float, p_pos: float, expected: float | None, stars: float | None) -> dict:
+    """Original formulas (study guide 5.12 to 5.14). The mismatch rule is the original confidence rule."""
     conf = max(p_neg, p_neu, p_pos)
-    out = {"text_label": _label(p_neg, p_neu, p_pos), "confidence": round(conf, 4), "fused_stars": None,
+    label = "neg" if conf == p_neg else ("neu" if conf == p_neu else "pos")
+    out = {"text_label": label, "confidence": round(conf, 4), "fused_stars": None,
            "pred_stars": expected, "star_gap": None, "mismatch_type": None}
     if stars is None:
         return out
@@ -39,8 +35,9 @@ def fuse(p_neg: float, p_neu: float, p_pos: float, expected: float | None, stars
 async def score_batch(session: AsyncSession, batch_id: int) -> int:
     """Per review: take the predictions of the models in its route group, average them with the group's weights
     (equal weights when the group has fewer than 100 validation reviews), then fuse with the stars."""
-    reg = sentiment.registry()
-    key_of = {(c["name"], c["version"]): k for k, c in reg.items()}
+    from app.services import sentiment  # imported here so fuse() and ensemble() stay light
+
+    key_of = {(c["name"], c["version"]): k for k, c in sentiment.registry().items()}
     mkey = {mid: key_of[(n, v)] for mid, n, v in
             (await session.execute(select(MLModel.model_id, MLModel.name, MLModel.version))).all() if (n, v) in key_of}
     wt: dict[tuple, float] = {}

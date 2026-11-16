@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
-    BigInteger, CheckConstraint, DateTime, Float, ForeignKey, Index,
+    BigInteger, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer,
     String, UniqueConstraint, func, text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -17,6 +17,21 @@ class MLModel(Base):
     name: Mapped[str] = mapped_column(String(200))
     version: Mapped[str] = mapped_column(String(50))
     kind: Mapped[str] = mapped_column(String(30))
+
+
+class ModelWeight(Base):
+    """Ensemble weight of one model inside one route group: its macro F1 on the validation reviews."""
+    __tablename__ = "model_weight"
+    __table_args__ = (
+        CheckConstraint("weight > 0", name="positive"),
+        CheckConstraint("route_group IN ('english','european','multi')", name="group_valid"),
+    )
+
+    route_group: Mapped[str] = mapped_column(String(20), primary_key=True)
+    model_id: Mapped[int] = mapped_column(ForeignKey("model.model_id", ondelete="CASCADE"), primary_key=True)
+    weight: Mapped[float] = mapped_column(Float)
+    n_val: Mapped[int] = mapped_column(Integer, server_default="0")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Prediction(Base):

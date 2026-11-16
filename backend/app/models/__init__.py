@@ -7,10 +7,11 @@ from app.models.ingest import (
 )
 from app.models.issues import Issue, IssuePriority, IssueReview
 from app.models.ops import ScoringJob
-from app.models.scoring import MLModel, Prediction, ReviewScore
+from app.models.scoring import MLModel, ModelWeight, Prediction, ReviewScore
 from app.models.tenancy import AppUser, Workspace
 
 __all__ = [
+    "ModelWeight",
     "Action", "Aspect", "ReviewAspect", "ReviewAspectRun", "SentenceAspect", "SentenceAspectRun", "Brand", "Product", "Review", "GoldLabel",
     "ColumnMapping", "ColumnProfile", "IngestIssue", "RawReviewStaging", "SourceTemplate", "UploadBatch",
     "MLModel", "Prediction", "ReviewScore", "AppUser", "Workspace", "ScoringJob",

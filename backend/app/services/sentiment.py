@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 import joblib
@@ -7,9 +6,10 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from app.core import thresholds as T
 from app.core.config import settings
+from app.services.labels import parse_labels
 
-MAX_LEN = T.SENTIMENT_MAX_TOKENS
-DEFAULT = "roberta"
+MAX_LEN = getattr(T, "SENTIMENT_MAX_TOKENS", 128)
+DEFAULT = "roberta"   # RoBERTa also scores the aspect sentences
 _device = "cuda" if torch.cuda.is_available() else "cpu"
 _cache: dict = {}
 
@@ -27,27 +27,10 @@ def registry() -> dict[str, dict]:
 
 
 def available(key: str) -> bool:
-    """The TF-IDF baseline is available once scripts/train_tfidf.py has saved its file."""
+    """The TF-IDF baseline exists once scripts/train_tfidf.py has saved its file."""
     if key == "tfidf":
         return Path(settings.tfidf_path).exists()
     return key in registry()
-
-
-def _star(label: str):
-    m = re.search(r"(\d)\s*star", label.lower())
-    return int(m.group(1)) if m else None
-
-
-def _pol(label: str):
-    low = label.lower()
-    if "neg" in low:
-        return 0
-    if "neu" in low:
-        return 1
-    if "pos" in low:
-        return 2
-    m = re.fullmatch(r"label_(\d)", low)
-    return int(m.group(1)) if m and int(m.group(1)) < 3 else None
 
 
 class Scorer:
@@ -55,18 +38,8 @@ class Scorer:
         self.tok = AutoTokenizer.from_pretrained(source)
         self.model = AutoModelForSequenceClassification.from_pretrained(source).eval().to(_device)
         id2 = self.model.config.id2label
-        self.n = len(id2)
-        if self.n == 5:
-            self.vals = [_star(id2[i]) for i in range(5)]
-            ok = None not in self.vals and sorted(self.vals) == [1, 2, 3, 4, 5]
-        elif self.n == 3:
-            self.vals = [_pol(id2[i]) for i in range(3)]
-            ok = None not in self.vals and sorted(self.vals) == [0, 1, 2]
-        else:
-            ok = False
-        if not ok:
-            raise RuntimeError(f"Cannot map the labels of {source}: {id2}")
-        self.mapping = {id2[i]: self.vals[i] for i in range(self.n)}
+        self.kind, self.vals = parse_labels(id2)
+        self.mapping = {id2[i]: self.vals[i] for i in range(len(self.vals))}
 
     def predict(self, texts: list[str], batch_size: int = 32):
         """Returns (p_neg, p_neu, p_pos, expected_stars or None) per text. Expected stars only for 5-class models."""
@@ -77,7 +50,7 @@ class Scorer:
                 probs = torch.softmax(self.model(**enc).logits, dim=-1).cpu().tolist()
             for row in probs:
                 by = dict(zip(self.vals, row))
-                if self.n == 5:
+                if self.kind == "stars":
                     out.append((by[1] + by[2], by[3], by[4] + by[5], sum(s * p for s, p in by.items())))
                 else:
                     out.append((by[0], by[1], by[2], None))
@@ -85,7 +58,7 @@ class Scorer:
 
 
 class TfidfScorer:
-    mapping = {"negative": 0, "neutral": 1, "positive": 2}
+    mapping = {"neg": 0, "neu": 1, "pos": 2}
 
     def __init__(self):
         self.pipe = joblib.load(settings.tfidf_path)

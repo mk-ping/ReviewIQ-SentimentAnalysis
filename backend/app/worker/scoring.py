@@ -1,6 +1,6 @@
 import asyncio
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core import thresholds as T
@@ -27,12 +27,14 @@ async def handle_score_all(job_id: int, batch_id: int) -> None:
     reg = sentiment.registry()
     todo = []
     async with SessionLocal() as s:
+        await set_progress(s, job_id, 0)
         revs = (await s.execute(select(Review.review_id, Review.text_clean, Review.language)
                                 .where(Review.batch_id == batch_id, Review.spam_score <= T.SPAM_MAX).order_by(Review.review_id))).all()
         if not revs:
             raise RuntimeError("This batch has no reviews to score.")
         for key, cfg in reg.items():
             if not sentiment.available(key):
+                print(f"[score] {key} is not available (the baseline needs python -m scripts.train_tfidf); skipping it")
                 continue
             mid = await _model_id(s, cfg)
             have = set((await s.execute(

@@ -12,7 +12,7 @@ async def main():
         ids = (await s.execute(select(Review.batch_id).distinct().order_by(Review.batch_id))).scalars().all()
         for b in ids:
             n = await score_batch(s, b)
-            print(f"batch {b}: {n} scored")
+            print(f"batch {b}: {n} fused")
     await engine.dispose()
 
 

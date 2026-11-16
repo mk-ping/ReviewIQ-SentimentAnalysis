@@ -47,3 +47,6 @@ from app.worker.embed_models import handle_embed as handle_embed_models
 
 HANDLERS = {"score": handle_score_all, "aspects": handle_aspects_sentences, "issues": handle_issues, "embed": handle_embed_models}
 # retired-handlers-removed: the review-level LLM aspect stage, single-model score and old embed stage live in scoring.py, aspects_sbert.py, embed_models.py
+
+from app.worker.scoring import handle_score_all  # noqa: E402
+HANDLERS["score"] = handle_score_all
