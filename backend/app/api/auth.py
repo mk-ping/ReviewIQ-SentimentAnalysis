@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.tenant import set_workspace
 from app.core.security import hash_password, make_token, read_token, verify_password
 from app.db.session import get_session
 from app.models.tenancy import AppUser, Workspace
@@ -41,6 +42,7 @@ async def current_user(request: Request, session: AsyncSession = Depends(get_ses
 async def require_user(user: AppUser | None = Depends(current_user)) -> AppUser | None:
     if settings.auth_required and user is None:
         raise HTTPException(401, "Please log in.")
+    set_workspace(user.workspace_id if user else None)   # every query below sees only this user's reviews
     return user
 
 
@@ -56,17 +58,14 @@ async def signup(body: Credentials, resp: Response, session: AsyncSession = Depe
         raise HTTPException(422, "Enter a valid email address.")
     if len(body.password) < 8:
         raise HTTPException(422, "Use a password of at least 8 characters.")
-    ws = await session.scalar(select(func.min(Workspace.workspace_id)))
-    if ws is None:
-        w = Workspace(name=settings.default_workspace_name)
-        session.add(w)
-        await session.flush()
-        ws = w.workspace_id
-    if await session.scalar(select(AppUser.user_id).where(AppUser.workspace_id == ws, AppUser.email == email)):
+    if await session.scalar(select(AppUser.user_id).where(AppUser.email == email)):
         raise HTTPException(409, "That email already has an account. Log in instead.")
-    first = (await session.scalar(select(func.count()).select_from(AppUser).where(AppUser.password_hash.is_not(None)))) == 0
-    u = AppUser(workspace_id=ws, email=email, full_name=(body.name or "").strip()[:200] or None,
-                password_hash=hash_password(body.password), role="manager" if first else "analyst")
+    # every account gets its own workspace, so a new account starts with an empty dashboard
+    w = Workspace(name=((body.name or "").strip() or email.split("@")[0])[:150] + "'s workspace")
+    session.add(w)
+    await session.flush()
+    u = AppUser(workspace_id=w.workspace_id, email=email, full_name=(body.name or "").strip()[:200] or None,
+                password_hash=hash_password(body.password), role="manager")
     session.add(u)
     await session.commit()
     _set_cookie(resp, u.user_id)

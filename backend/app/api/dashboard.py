@@ -6,6 +6,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
+from app.core.tenant import workspace_id
 from app.db.session import get_session
 from app.models import Workspace
 from app.services.views import refresh_views
@@ -25,7 +26,7 @@ MV_FILT = """
 
 
 async def _ws(session: AsyncSession) -> int:
-    return await session.scalar(select(func.min(Workspace.workspace_id))) or 1
+    return await workspace_id(session)
 
 
 def _f(x, nd=2):

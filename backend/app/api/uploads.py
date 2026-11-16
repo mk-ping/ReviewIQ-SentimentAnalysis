@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.core.config import settings
+from app.core.tenant import current_workspace
 from app.db.session import get_session
 from app.models import IngestIssue, RawReviewStaging, UploadBatch, Workspace
 from app.services.file_detect import detect
@@ -18,6 +19,9 @@ EXT = {"csv": ".csv", "tsv": ".tsv", "xlsx": ".xlsx", "json": ".json", "jsonl": 
 
 
 async def default_workspace_id(session: AsyncSession) -> int:
+    mine = current_workspace()
+    if mine:
+        return mine
     ws = (
         await session.execute(select(Workspace).order_by(Workspace.workspace_id).limit(1))
     ).scalar_one_or_none()

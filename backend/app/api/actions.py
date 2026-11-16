@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.action_rules import rule_for
+from app.core.tenant import workspace_id
 from app.db.session import get_session
 from app.models import Action, Aspect, Issue, IssuePriority, IssueReview, Workspace
 from app.services.actions import impact
@@ -31,7 +32,7 @@ class ActionPatch(BaseModel):
 
 
 async def _ws(session: AsyncSession) -> int:
-    return await session.scalar(select(func.min(Workspace.workspace_id))) or 1
+    return await workspace_id(session)
 
 
 def _view(a: Action, aspect: str, imp: dict | None = None) -> dict:

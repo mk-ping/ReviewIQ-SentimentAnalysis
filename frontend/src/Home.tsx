@@ -29,6 +29,15 @@ export default function Home() {
   if (s.error || d.error || !s.data || !d.data)
     return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
   const sum = s.data, dist = d.data;
+  if (sum.reviews === 0) {
+    return (
+      <div className="mx-auto max-w-xl p-10 text-center">
+        <h1 className="text-2xl font-bold">Nothing here yet</h1>
+        <p className="mt-2 text-slate-500">Upload a file of reviews and run the analysis. Your dashboards fill up as soon as it finishes.</p>
+        <Link to="/upload" className="mt-6 inline-block rounded-lg bg-gradient-to-r from-accent to-accent2 px-5 py-2.5 text-sm font-semibold text-slate-50 hover:opacity-90">Upload reviews</Link>
+      </div>
+    );
+  }
 
   const option = {
     grid: { left: 40, right: 10, top: 20, bottom: 30 },

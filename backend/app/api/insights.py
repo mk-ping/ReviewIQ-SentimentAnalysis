@@ -3,6 +3,7 @@ from sqlalchemy import and_, exists, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
+from app.core.tenant import workspace_id
 from app.db.session import get_session
 from app.models import Aspect, Product, Review, ReviewAspect, ReviewAspectRun, ReviewScore, Workspace
 from app.services.smoothing import smooth
@@ -12,8 +13,7 @@ router = APIRouter(tags=["insights"])
 
 
 async def _workspace_id(session: AsyncSession) -> int:
-    ws = await session.scalar(select(func.min(Workspace.workspace_id)))
-    return ws or 1
+    return await workspace_id(session)
 
 
 @router.get("/true-rating")
