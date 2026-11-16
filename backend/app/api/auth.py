@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.ownership import belongs_elsewhere
 from app.core.tenant import set_workspace
 from app.core.security import hash_password, make_token, read_token, verify_password
 from app.db.session import get_session
@@ -39,9 +40,12 @@ async def current_user(request: Request, session: AsyncSession = Depends(get_ses
     return await session.get(AppUser, uid) if uid else None
 
 
-async def require_user(user: AppUser | None = Depends(current_user)) -> AppUser | None:
+async def require_user(request: Request, user: AppUser | None = Depends(current_user),
+                       session: AsyncSession = Depends(get_session)) -> AppUser | None:
     if settings.auth_required and user is None:
         raise HTTPException(401, "Please log in.")
+    if user is not None and await belongs_elsewhere(session, request.path_params, user.workspace_id):
+        raise HTTPException(404, "Not found.")   # same answer as a missing record, so ids cannot be probed
     set_workspace(user.workspace_id if user else None)   # every query below sees only this user's reviews
     return user
 
