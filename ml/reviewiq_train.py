@@ -245,6 +245,9 @@ def cmd_build(a):
     print("Polarity data")
     pool += load_tweets(a.tweets_per_lang)
     pool += load_hindi(a.hindi_total)
+    print("Extra datasets")
+    from extra_sources import load_extra
+    pool += load_extra(a.extra_per_source, row, norm, keep)
     print("Local CSVs (data/external)")
     pool += load_local(a.local_cap)
 
@@ -279,6 +282,7 @@ def main():
     p.add_argument("--scan", type=int, default=80000, help="max jsonl lines to read per Amazon category")
     p.add_argument("--tweets-per-lang", type=int, default=1200)
     p.add_argument("--hindi-total", type=int, default=6000)
+    p.add_argument("--extra-per-source", type=int, default=3000)
     p.add_argument("--local-cap", type=int, default=4000)
     cmd_build(p.parse_args())
 

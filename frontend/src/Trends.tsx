@@ -15,7 +15,7 @@ const d1 = (x: number | null | undefined) => (x == null ? "n/a" : x.toFixed(2));
 
 export default function Trends() {
   const f = useFilters();
-  const [grain, setGrain] = useState<"week" | "month">("week");
+  const [grain, setGrain] = useState<"week" | "month" | "quarter" | "year">("week");
   const qs = filterQs(f);
   const join = qs ? qs + "&" : "?";
   const t = useQuery({ queryKey: ["trends", grain, qs], queryFn: () => api<TrendData>("/trends" + join + "grain=" + grain) });
@@ -78,7 +78,7 @@ export default function Trends() {
       </section>
 
       <div className="flex gap-2 text-sm">
-        {(["week", "month"] as const).map((g) => (
+        {(["week", "month", "quarter", "year"] as const).map((g) => (
           <button key={g} onClick={() => setGrain(g)}
             className={"rounded-md px-3 py-1 " + (grain === g ? "bg-indigo-600 text-white" : "border text-slate-600 hover:bg-slate-100")}>
             By {g}

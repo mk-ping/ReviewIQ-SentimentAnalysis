@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, TrueRating } from "./api";
@@ -10,6 +10,7 @@ const GROUPS = [
   { title: "Overview", pages: [
     { to: "/", label: "Home", icon: "home" },
     { to: "/sentiment", label: "Sentiment", icon: "smile" },
+    { to: "/distribution", label: "Who Likes What", icon: "compare" },
     { to: "/rating-vs-text", label: "Rating vs Text", icon: "gap" },
     { to: "/aspects", label: "Aspects", icon: "layers" },
   ] },
@@ -22,6 +23,7 @@ const GROUPS = [
   { title: "Workspace", pages: [
     { to: "/explorer", label: "Review Explorer", icon: "search" },
     { to: "/upload", label: "Upload and Data", icon: "upload" },
+    { to: "/quality", label: "Data Quality", icon: "check" },
     { to: "/label", label: "Gold Labels and Evaluation", icon: "tag" },
     { to: "/reports", label: "Reports and Replies", icon: "file" },
   ] },

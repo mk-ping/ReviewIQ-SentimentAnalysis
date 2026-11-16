@@ -106,7 +106,7 @@ async def summary(product: str | None = None, date_from: date | None = None, dat
 
 
 @router.get("/trends")
-async def trends(grain: Literal["week", "month"] = "week", product: str | None = None,
+async def trends(grain: Literal["week", "month", "quarter", "year"] = "week", product: str | None = None,
                  date_from: date | None = None, date_to: date | None = None,
                  session: AsyncSession = Depends(get_session)):
     a = _args(await _ws(session), product, date_from, date_to)
