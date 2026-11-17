@@ -8,7 +8,7 @@ from app.services import replies, sentence_aspects as SA
 # every profile is complete and every aspect has an action rule
 for name, p in D.PROFILES.items():
     assert set(p["seeds"]) == set(p["categories"]) == set(p["stems"]), name
-    assert all(len(v) == 6 for v in p["seeds"].values()), name
+    assert all(len(v) >= 6 for v in p["seeds"].values()), name
 missing = [c for c in D.all_categories() if c not in RULES]
 assert not missing, missing
 assert D.categories_of("product") == D.PROFILES["product"]["categories"]

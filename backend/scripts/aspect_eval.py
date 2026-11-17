@@ -7,7 +7,9 @@ import csv
 from pathlib import Path
 
 from app.core import thresholds as T
-from app.core.aspect_config import CATEGORIES
+from app.core.domains import all_categories
+
+CATEGORIES = all_categories()
 
 SRC = Path("../data/aspect_labels.csv")
 

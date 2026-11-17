@@ -13,6 +13,7 @@ const GROUPS = [
     { to: "/distribution", label: "Who Likes What", icon: "compare" },
     { to: "/rating-vs-text", label: "Rating vs Text", icon: "gap" },
     { to: "/aspects", label: "Aspects", icon: "layers" },
+    { to: "/aspect-types", label: "Aspect Types", icon: "tag" },
   ] },
   { title: "Insights", pages: [
     { to: "/watchlist", label: "Product Watchlist", icon: "alert" },
@@ -143,3 +144,4 @@ export default function Layout() {
     </div>
   );
 }
+

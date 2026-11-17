@@ -22,6 +22,7 @@ import Distribution from "./Distribution";
 import Label from "./Label";
 import Reports from "./Reports";
 import Trends from "./Trends";
+import AspectTypes from "./AspectTypes";
 import "./index.css";
 
 const client = new QueryClient();
@@ -54,6 +55,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="label" element={<Label />} />
             <Route path="reports" element={<Reports />} />
             <Route path="trends" element={<Trends />} />
+            <Route path="aspect-types" element={<AspectTypes />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>
           </Route>
@@ -63,4 +65,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
 

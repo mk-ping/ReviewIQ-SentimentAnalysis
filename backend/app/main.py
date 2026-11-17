@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.actions import router as actions_router
 from app.api.auth import require_user, router as auth_router
 from app.api.dashboard import router as dashboard_router
+from app.api.domains import router as domains_router
 from app.api.distribution import router as distribution_router
 from app.api.watchlist import router as watchlist_router
 from app.api.evaluation import router as evaluation_router
@@ -46,6 +47,7 @@ app.include_router(insights_router, dependencies=protected)
 app.include_router(jobs_router, dependencies=protected)
 app.include_router(issues_router, dependencies=protected)
 app.include_router(dashboard_router, dependencies=protected)
+app.include_router(domains_router, dependencies=protected)
 app.include_router(explorer_router, dependencies=protected)
 app.include_router(evaluation_router, dependencies=protected)
 app.include_router(actions_router, dependencies=protected)

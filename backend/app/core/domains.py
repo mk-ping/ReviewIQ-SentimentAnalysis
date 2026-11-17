@@ -204,3 +204,16 @@ def detect_domain(texts: list[str], forced: str | None = None) -> str:
     if rate >= MIN_RATE and rate >= MARGIN * second:
         return best
     return FALLBACK
+
+
+# ---- extra review types and seed phrases (app/core/domains_extra.py) ----
+from app.core import domains_extra as _x  # noqa: E402
+
+PROFILES.update(_x.EXTRA_PROFILES)
+for _d, _asp in _x.EXTRA_SEEDS.items():
+    _new = dict(PROFILES[_d]["seeds"])          # copy, so the product seeds in aspect_config stay at 6
+    for _a, _ph in _asp.items():
+        _new[_a] = list(_new[_a]) + [p for p in _ph if p not in _new[_a]]
+    PROFILES[_d]["seeds"] = _new
+EXTRA_RULES.update(_x.MORE_RULES)
+EXTRA_REPLY_LINES.update(_x.MORE_REPLY_LINES)
