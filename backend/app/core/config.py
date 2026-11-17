@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_name: str = "ReviewIQ"
+    aspect_domain: str = "auto"   # auto, product, restaurant, hotel, movie, app or general
     database_url: str
     max_upload_mb: int = 25
     upload_dir: str = "../data/uploads"

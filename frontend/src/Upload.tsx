@@ -166,7 +166,6 @@ export default function Upload() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
       <header>
-        <h1 className="text-2xl font-bold">Bring in my data</h1>
         <p className="text-slate-600">Upload a review file. The system finds the columns itself and asks only when it is unsure.</p>
       </header>
 

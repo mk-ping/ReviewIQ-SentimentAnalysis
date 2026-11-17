@@ -1,7 +1,7 @@
 RULES = {
     "packaging": ("Review the closure or pump design and ask the supplier for a fix or a replacement part", "Packaging and supplier quality"),
     "delivery": ("Audit the courier and dispatch process and set delivery-time targets", "Logistics"),
-    "price": ("Compare price and pack size with competitors and make the value clearer on the listing", "Pricing and marketing"),
+    "price": ("Compare pricing with competitors and make the value clearer to customers", "Pricing and marketing"),
     "quality": ("Inspect the affected batches and tighten the quality checks before dispatch", "Quality and manufacturing"),
     "durability": ("Run durability tests and review the materials used", "Product and R&D"),
     "scent": ("Review the fragrance or describe the scent more accurately on the listing", "Product and marketing"),
@@ -14,6 +14,12 @@ RULES = {
     "customer service": ("Set response-time targets and retrain the support team on the repeated complaints", "Customer support"),
 }
 DEFAULT = ("Read the evidence reviews and decide on an owner", "Manager")
+
+
+from app.core.domains import EXTRA_RULES  # noqa: E402
+
+for _k, _v in EXTRA_RULES.items():
+    RULES.setdefault(_k, _v)
 
 
 def rule_for(aspect: str) -> tuple[str, str]:

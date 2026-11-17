@@ -7,7 +7,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import thresholds as T
-from app.core.aspect_config import CATEGORIES
+from app.core.domains import all_categories
+
+CATEGORIES = all_categories()
 from app.core.config import settings
 from app.services.aspects import _norm
 from app.services.embeddings import embed

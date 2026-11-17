@@ -17,13 +17,15 @@ from app.services.queue import set_progress
 CHUNK = 32
 
 
-async def _aspect_ids(s, workspace_id: int) -> dict[str, int]:
-    await s.execute(
-        pg_insert(Aspect)
-        .values([{"workspace_id": workspace_id, "name": n} for n in CATEGORIES])
-        .on_conflict_do_nothing(index_elements=["workspace_id", "name"])
-    )
-    await s.commit()
+async def _aspect_ids(s, workspace_id: int, names: list[str] | None = None) -> dict[str, int]:
+    names = list(CATEGORIES) if names is None else names
+    if names:
+        await s.execute(
+            pg_insert(Aspect)
+            .values([{"workspace_id": workspace_id, "name": n} for n in names])
+            .on_conflict_do_nothing(index_elements=["workspace_id", "name"])
+        )
+        await s.commit()
     rows = (await s.execute(select(Aspect.name, Aspect.aspect_id).where(Aspect.workspace_id == workspace_id))).all()
     return {name: aid for name, aid in rows}
 

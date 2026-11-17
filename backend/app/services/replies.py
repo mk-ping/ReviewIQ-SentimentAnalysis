@@ -19,6 +19,10 @@ ASPECT_LINES = {
     "customer service": "We are sorry about your experience with our support.",
 }
 GENERIC = "We are sorry your experience did not meet your expectations."
+from app.core.domains import EXTRA_REPLY_LINES  # noqa: E402
+
+for _k, _v in EXTRA_REPLY_LINES.items():
+    ASPECT_LINES.setdefault(_k, _v)
 CLOSE = "Please reply with your order number so we can put this right."
 
 
@@ -33,4 +37,5 @@ def draft_reply(severe: list[str], aspect: str | None, language: str | None = "e
     body = " ".join(parts)
     if language not in (None, "en", "und"):
         body = f"[Review language: {language}. Translate before sending.] " + body
-    return body
+    return body
+
