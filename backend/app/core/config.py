@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     roberta_model: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
     nlptown_model: str = "nlptown/bert-base-multilingual-uncased-sentiment"
     xlmr_model: str = "cardiffnlp/twitter-xlm-roberta-base-sentiment"
+    ft_model: str = ""  # folder or Hub id of the model made by ml/finetune.py
     distil_model: str = ""  # multilingual DistilBERT: verify the Hub id, then set it here or in .env
     tfidf_path: str = "../ml/out/tfidf_lr.joblib"
     llm_url: str = "http://127.0.0.1:11434"

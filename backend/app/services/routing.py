@@ -1,8 +1,8 @@
 EURO = {"es", "fr", "de", "it", "nl"}
 MEMBERS = {
-    "english": ["tfidf", "roberta", "nlptown"],
-    "european": ["tfidf", "nlptown", "xlmr"],
-    "multi": ["tfidf", "xlmr", "distil"],
+    "english": ["tfidf", "roberta", "nlptown", "ft"],
+    "european": ["tfidf", "nlptown", "xlmr", "ft"],
+    "multi": ["tfidf", "xlmr", "distil", "ft"],
 }
 
 

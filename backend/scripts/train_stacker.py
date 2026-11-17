@@ -37,8 +37,8 @@ def main() -> None:
     results: dict = {}
     for g, wanted in MEMBERS.items():
         members = [k for k in wanted if sentiment.available(k)]
-        if members != wanted:
-            print(f"[{g}] skipped: needs all of {wanted}, available {members}")
+        if len(members) < 2:
+            print(f"[{g}] skipped: needs at least two of {wanted}, available {members}")
             continue
         vrows = take([r for r in val_all if group_of(r["lang"]) == g], a.val_cap)
         if len(vrows) < 30:

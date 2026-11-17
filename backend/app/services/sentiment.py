@@ -22,6 +22,8 @@ def registry() -> dict[str, dict]:
     }
     if settings.distil_model:
         reg["distil"] = {"name": settings.distil_model, "version": "pretrained", "kind": "sentiment"}
+    if settings.ft_model:
+        reg["ft"] = {"name": settings.ft_model, "version": "finetuned", "kind": "sentiment"}
     reg["tfidf"] = {"name": "reviewiq-tfidf-lr", "version": "trained", "kind": "baseline"}
     return reg
 

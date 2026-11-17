@@ -248,6 +248,9 @@ def cmd_build(a):
     print("Extra datasets")
     from extra_sources import load_extra
     pool += load_extra(a.extra_per_source, row, norm, keep)
+    print("Extra genres (hotels, app reviews)")
+    from extra_genres import load_genres
+    pool += load_genres(a.genre_per_star, row, norm, keep)
     print("Local CSVs (data/external)")
     pool += load_local(a.local_cap)
 
@@ -284,6 +287,7 @@ def main():
     p.add_argument("--hindi-total", type=int, default=6000)
     p.add_argument("--extra-per-source", type=int, default=3000)
     p.add_argument("--local-cap", type=int, default=4000)
+    p.add_argument("--genre-per-star", type=int, default=800, help="hotel and app reviews per star")
     cmd_build(p.parse_args())
 
 
