@@ -1,0 +1,120 @@
+﻿ANALYZE
+ANALYZE
+===== SIMILAR REVIEWS, same model only, WITH HNSW INDEX =====
+SET
+                                                                                   QUERY PLAN                                                                                   
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=347.82..362.96 rows=5 width=16) (actual time=24.406..24.414 rows=5 loops=1)
+   Buffers: shared hit=398
+   InitPlan 1 (returns $0)
+     ->  Limit  (cost=0.28..0.82 rows=1 width=1552) (actual time=0.397..0.398 rows=1 loops=1)
+           Buffers: shared hit=3
+           ->  Index Scan using review_embedding_pkey on review_embedding  (cost=0.28..1322.33 rows=2439 width=1552) (actual time=0.396..0.397 rows=1 loops=1)
+                 Buffers: shared hit=3
+   InitPlan 2 (returns $1)
+     ->  Limit  (cost=0.28..0.82 rows=1 width=55) (actual time=0.018..0.018 rows=1 loops=1)
+           Buffers: shared hit=3
+           ->  Index Scan using review_embedding_pkey on review_embedding review_embedding_1  (cost=0.28..1322.33 rows=2439 width=55) (actual time=0.016..0.016 rows=1 loops=1)
+                 Buffers: shared hit=3
+   ->  Index Scan using ix_review_embedding_hnsw on review_embedding e  (cost=346.18..4039.83 rows=1220 width=16) (actual time=24.405..24.410 rows=5 loops=1)
+         Order By: (embedding <=> $0)
+         Filter: ((model)::text = ($1)::text)
+         Buffers: shared hit=398
+ Planning:
+   Buffers: shared hit=38
+ Planning Time: 1.048 ms
+ Execution Time: 24.894 ms
+(20 rows)
+
+RESET
+===== SIMILAR REVIEWS, same model only, WITHOUT INDEX =====
+SET
+                                                                        QUERY PLAN                                                                        
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=1737.98..1737.99 rows=5 width=16) (actual time=4.666..4.670 rows=5 loops=1)
+   Buffers: shared hit=1611
+   InitPlan 1 (returns $0)
+     ->  Limit  (cost=573.59..573.59 rows=1 width=1552) (actual time=2.196..2.198 rows=1 loops=1)
+           Buffers: shared hit=537
+           ->  Sort  (cost=573.59..579.68 rows=2439 width=1552) (actual time=2.195..2.196 rows=1 loops=1)
+                 Sort Key: review_embedding.review_id
+                 Sort Method: top-N heapsort  Memory: 27kB
+                 Buffers: shared hit=537
+                 ->  Seq Scan on review_embedding  (cost=0.00..561.39 rows=2439 width=1552) (actual time=0.007..1.030 rows=2439 loops=1)
+                       Buffers: shared hit=537
+   InitPlan 2 (returns $1)
+     ->  Limit  (cost=573.59..573.59 rows=1 width=55) (actual time=1.636..1.637 rows=1 loops=1)
+           Buffers: shared hit=537
+           ->  Sort  (cost=573.59..579.68 rows=2439 width=55) (actual time=1.635..1.635 rows=1 loops=1)
+                 Sort Key: review_embedding_1.review_id
+                 Sort Method: top-N heapsort  Memory: 25kB
+                 Buffers: shared hit=537
+                 ->  Seq Scan on review_embedding review_embedding_1  (cost=0.00..561.39 rows=2439 width=55) (actual time=0.003..1.014 rows=2439 loops=1)
+                       Buffers: shared hit=537
+   ->  Sort  (cost=590.80..593.85 rows=1220 width=16) (actual time=4.665..4.665 rows=5 loops=1)
+         Sort Key: ((e.embedding <=> $0))
+         Sort Method: top-N heapsort  Memory: 25kB
+         Buffers: shared hit=1611
+         ->  Seq Scan on review_embedding e  (cost=0.00..570.54 rows=1220 width=16) (actual time=3.852..4.527 rows=973 loops=1)
+               Filter: ((model)::text = ($1)::text)
+               Rows Removed by Filter: 1466
+               Buffers: shared hit=1611
+ Planning:
+   Buffers: shared hit=1
+ Planning Time: 0.220 ms
+ Execution Time: 4.709 ms
+(32 rows)
+
+RESET
+===== SENTENCES FOR ONE ASPECT, WITH ix_sentence_aspect_aspect =====
+SET
+                                                                   QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=101.86..139.95 rows=20 width=73) (actual time=1.134..1.195 rows=20 loops=1)
+   Buffers: shared hit=43 read=15
+   ->  Bitmap Heap Scan on sentence_aspect  (cost=101.86..181.84 rows=42 width=73) (actual time=1.133..1.191 rows=20 loops=1)
+         Recheck Cond: ((aspect)::text = 'delivery'::text)
+         Filter: (sent_score <= '-0.25'::double precision)
+         Rows Removed by Filter: 103
+         Heap Blocks: exact=40
+         Buffers: shared hit=43 read=15
+         ->  Bitmap Index Scan on uq_sentence_aspect_sentence  (cost=0.00..101.85 rows=199 width=0) (actual time=1.114..1.115 rows=199 loops=1)
+               Index Cond: ((aspect)::text = 'delivery'::text)
+               Buffers: shared hit=3 read=15
+ Planning:
+   Buffers: shared hit=24
+ Planning Time: 0.263 ms
+ Execution Time: 1.268 ms
+(15 rows)
+
+RESET
+===== SENTENCES FOR ONE ASPECT, WITHOUT INDEX =====
+SET
+SET
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=0.00..61.02 rows=20 width=73) (actual time=0.021..0.522 rows=20 loops=1)
+   Buffers: shared hit=44
+   ->  Seq Scan on sentence_aspect  (cost=0.00..128.13 rows=42 width=73) (actual time=0.020..0.516 rows=20 loops=1)
+         Filter: ((sent_score <= '-0.25'::double precision) AND ((aspect)::text = 'delivery'::text))
+         Rows Removed by Filter: 2270
+         Buffers: shared hit=44
+ Planning Time: 0.079 ms
+ Execution Time: 0.537 ms
+(8 rows)
+
+RESET
+RESET
+===== ASPECT COVERAGE (tagged vs general sentences) =====
+                                                      QUERY PLAN                                                       
+-----------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=136.66..136.67 rows=1 width=16) (actual time=1.353..1.354 rows=1 loops=1)
+   Buffers: shared hit=77
+   ->  Seq Scan on sentence_aspect  (cost=0.00..111.09 rows=3409 width=7) (actual time=0.009..0.518 rows=3409 loops=1)
+         Buffers: shared hit=77
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.140 ms
+ Execution Time: 1.381 ms
+(8 rows)
+

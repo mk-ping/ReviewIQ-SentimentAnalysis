@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, send } from "./api";
 import Chart from "./Chart";
+import LoadError from "./LoadError";
 
 type Queue = {
   labelled: number; total: number; remaining: number;
@@ -35,7 +36,7 @@ function Labeller() {
     onSuccess: () => { setLabel(""); setMismatch(""); qc.invalidateQueries({ queryKey: ["label-queue"] }); qc.invalidateQueries({ queryKey: ["evaluation"] }); },
   });
   if (q.isLoading) return <p className="text-slate-500">Loading...</p>;
-  if (q.error || !q.data) return <p className="text-red-600">Could not reach the API. Is uvicorn running on port 8010?</p>;
+  if (q.error || !q.data) return <LoadError compact />;
   const d = q.data;
   const btn = (active: boolean) => "rounded-md px-3 py-1 text-sm " + (active ? "bg-indigo-600 text-white" : "border text-slate-700 hover:bg-slate-100");
 
@@ -70,7 +71,7 @@ function Labeller() {
 function Results() {
   const e = useQuery({ queryKey: ["evaluation"], queryFn: () => api<Evaluation>("/evaluation") });
   if (e.isLoading) return <p className="text-slate-500">Loading...</p>;
-  if (e.error || !e.data) return <p className="text-red-600">Could not reach the API. Is uvicorn running on port 8010?</p>;
+  if (e.error || !e.data) return <LoadError compact />;
   const d = e.data;
   if (d.labelled === 0) return <p className="text-slate-500">{d.note}</p>;
   const m = d.text_models?.[0];
@@ -103,7 +104,7 @@ function Results() {
             {row("Stars alone", d.stars_only)}
           </tbody>
         </table>
-        <p className="mt-2 text-xs text-slate-400">{d.note} A model stays only if it beats stars alone and the TF-IDF baseline (python -m scripts.baseline_tfidf).</p>
+        <p className="mt-2 text-xs text-slate-400">{d.note} A model is kept only if it beats stars alone and the simple word-count baseline.</p>
         {d.gold_vs_stars_disagreement != null && <p className="mt-1 text-sm text-slate-600">Stars and your labels disagree on {f(d.gold_vs_stars_disagreement * 100, 0)}% of reviews.</p>}
       </section>
 

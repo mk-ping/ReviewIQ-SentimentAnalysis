@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, RatingVsTextData, MismatchList, HiddenData } from "./api";
 import { filterQs, useFilters } from "./store";
 import Chart from "./Chart";
+import LoadError from "./LoadError";
 
 const pct = (x: number | null | undefined) => (x == null ? "n/a" : (x * 100).toFixed(0) + "%");
 const num = (x: number | null | undefined, d = 1) => (x == null ? "n/a" : x.toFixed(d));
@@ -42,7 +43,7 @@ export default function RatingVsText() {
   const hd = useQuery({ queryKey: ["hidden"], queryFn: () => api<HiddenData>("/hidden-dissatisfaction?limit=100") });
 
   if (rvt.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (rvt.error || !rvt.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (rvt.error || !rvt.data) return <LoadError />;
   const d = rvt.data;
 
   const chart = {

@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api, Distribution, Summary, TrueRating } from "./api";
 import Chart from "./Chart";
+import { NeedsAttention } from "./Watchlist";
 import { filterQs, useFilters } from "./store";
+import LoadError from "./LoadError";
 
 const fmt = (x: number | null | undefined, d = 2) => (x == null ? "n/a" : x.toFixed(d));
 
@@ -27,7 +29,7 @@ export default function Home() {
 
   if (s.isLoading || d.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
   if (s.error || d.error || !s.data || !d.data)
-    return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+    return <LoadError />;
   const sum = s.data, dist = d.data;
   if (sum.reviews === 0) {
     return (
@@ -57,6 +59,8 @@ export default function Home() {
         </p>
         <Link to="/upload" className="mt-2 inline-block rounded-md bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700">Upload reviews</Link>
       </header>
+
+      <NeedsAttention />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card title="Average rating" value={fmt(sum.average_rating)} note={`${sum.rated_reviews} rated reviews`} warn={sum.low_sample} />

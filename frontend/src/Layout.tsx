@@ -15,6 +15,7 @@ const GROUPS = [
     { to: "/aspects", label: "Aspects", icon: "layers" },
   ] },
   { title: "Insights", pages: [
+    { to: "/watchlist", label: "Product Watchlist", icon: "alert" },
     { to: "/problems", label: "Problems and Priorities", icon: "alert" },
     { to: "/compare", label: "Products and Competitors", icon: "compare" },
     { to: "/trends", label: "Trends and Alerts", icon: "trend" },
@@ -22,10 +23,10 @@ const GROUPS = [
   ] },
   { title: "Workspace", pages: [
     { to: "/explorer", label: "Review Explorer", icon: "search" },
-    { to: "/upload", label: "Upload and Data", icon: "upload" },
+    { to: "/upload", label: "Data Sources", icon: "upload" },
     { to: "/quality", label: "Data Quality", icon: "check" },
     { to: "/checks", label: "Model Checks", icon: "bolt" },
-    { to: "/label", label: "Gold Labels and Evaluation", icon: "tag" },
+    { to: "/label", label: "Model Evaluation", icon: "tag" },
     { to: "/reports", label: "Reports and Replies", icon: "file" },
   ] },
 ];

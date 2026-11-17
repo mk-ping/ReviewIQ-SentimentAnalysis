@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "./api";
+import LoadError from "./LoadError";
 
 type Quality = {
   files: number; rows_in_files: number; accepted: number; repaired: number; rejected: number; reconciles: boolean;
@@ -45,7 +46,7 @@ export default function QualityPage() {
   const q = useQuery({ queryKey: ["data-quality"], queryFn: () => api<Quality>("/data-quality") });
   const f = useQuery({ queryKey: ["review-flags"], queryFn: () => api<Flags>("/review-flags") });
   if (q.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (q.error || !q.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (q.error || !q.data) return <LoadError />;
   const d = q.data;
   if (d.reviews === 0 && d.files === 0) {
     return (

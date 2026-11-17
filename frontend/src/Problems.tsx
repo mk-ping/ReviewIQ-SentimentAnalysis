@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, send, ActionRow, Issue, Recommendation, WhatIf } from "./api";
+import LoadError from "./LoadError";
 
 const num = (x: number | null | undefined, d = 2) => (x == null ? "n/a" : x.toFixed(d));
 const STATUSES = ["todo", "in_progress", "done", "dropped"];
@@ -21,7 +22,7 @@ export default function Problems() {
   });
 
   if (issues.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (issues.error || !issues.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (issues.error || !issues.data) return <LoadError />;
   const list = issues.data.issues;
   const recFor = (id: number) => recs.data?.recommendations.find((r) => r.issue_id === id);
 

@@ -60,14 +60,14 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" }) {
             ))}
           </ul>
         </div>
-        <div className="relative text-sm text-slate-400">ReviewIQ &middot; ADBMS project</div>
+        <div className="relative text-sm text-slate-400">ReviewIQ &middot; Customer review intelligence</div>
       </aside>
 
       <main className="flex items-center justify-center px-5 py-12">
         <div className="w-full max-w-sm">
           <Link to="/welcome" className="mb-8 block lg:hidden"><Wordmark /></Link>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{isLogin ? "Welcome back" : "Create your account"}</h1>
-          <p className="mt-1.5 text-sm text-slate-500">{isLogin ? "Log in to see your dashboards." : "It takes a few seconds. The first account becomes the manager."}</p>
+          <p className="mt-1.5 text-sm text-slate-500">{isLogin ? "Log in to see your dashboards." : "It takes a few seconds. Your workspace is private to you."}</p>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
             {!isLogin && (

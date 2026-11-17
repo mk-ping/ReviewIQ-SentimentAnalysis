@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, TrueRating } from "./api";
 import Chart from "./Chart";
+import LoadError from "./LoadError";
 
 type CompAspect = { aspect: string; mentions: number; avg_sentiment: number | null; low_sample: boolean };
 type CompProduct = {
@@ -30,7 +31,7 @@ export default function Compare() {
   });
 
   if (list.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (list.error) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (list.error) return <LoadError />;
 
   const toggle = (n: string) =>
     setSel(chosen.includes(n) ? chosen.filter((x) => x !== n) : [...chosen, n].slice(-4));

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "./api";
 import { ALL_STAGES, call, runJob, STAGE_LABEL } from "./runner";
+import LoadError from "./LoadError";
 
 type Row = {
   batch_id: number; file_name: string | null; status: string; created_at: string; rows_total: number; rows_rejected: number;
@@ -97,9 +98,9 @@ export default function Sentiment() {
         <Link to="/upload" className="rounded-md bg-indigo-600 px-3 py-2 text-sm text-white hover:bg-indigo-700">Upload reviews</Link>
       </header>
       {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {stalled && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">No progress for 20 seconds. Is the worker running? Start it with: python -m app.worker.main</p>}
+      {stalled && <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">Analysis is taking longer than usual. It keeps running in the background, so you can leave this page and come back.</p>}
       {list.isLoading && <p className="text-slate-500">Loading...</p>}
-      {list.error && <p className="text-red-600">Could not reach the API. Is uvicorn running on port 8010?</p>}
+      {list.error && <LoadError compact />}
       {!list.isLoading && rows.length === 0 && <p className="text-slate-500">No uploads yet. Use Upload reviews to add one.</p>}
       <ul className="space-y-3">
         {rows.map((u) => {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, AspectRow, Drivers } from "./api";
 import Chart from "./Chart";
+import LoadError from "./LoadError";
 
 const pct = (x: number | null | undefined) => (x == null ? "n/a" : (x * 100).toFixed(0) + "%");
 
@@ -11,7 +12,7 @@ export default function Aspects() {
   const d = useQuery({ queryKey: ["drivers", range], queryFn: () => api<Drivers>(`/aspects/drivers?min_stars=${range[0]}&max_stars=${range[1]}`) });
 
   if (a.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (a.error || !a.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (a.error || !a.data) return <LoadError />;
   const sm = (r: { avg_sentiment: number; smoothed_sentiment?: number }) => r.smoothed_sentiment ?? r.avg_sentiment;
   const rows = [...a.data.aspects].sort((x, y) => sm(x) - sm(y));
   const worst = rows[0], best = rows[rows.length - 1];

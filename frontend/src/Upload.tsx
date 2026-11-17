@@ -46,7 +46,7 @@ function runJob(jobId: number, onProgress: (j: Job) => void): Promise<Job> {
       if (j.status === "done") { es.close(); resolve(j); }
       if (j.status === "failed") { es.close(); reject(new Error(j.error ?? "Job failed")); }
     };
-    es.onerror = () => { es.close(); reject(new Error("Lost the progress stream. Is the worker running?")); };
+    es.onerror = () => { es.close(); reject(new Error("Lost the live progress feed. Refresh the page to see the latest status.")); };
   });
 }
 
@@ -266,7 +266,7 @@ export default function Upload() {
           {report.reviews_saved > 0 && (
             <div className="mt-4 border-t pt-4">
               <h3 className="font-medium">Analyse these reviews</h3>
-              <p className="text-sm text-slate-500">Needs the worker running. Aspect finding is the slow step if a local LLM is used.</p>
+              <p className="text-sm text-slate-500">This can take a few minutes for large files.</p>
               <ul className="my-3 space-y-2 text-sm">
                 {STAGES.map(([key, label]) => (
                   <li key={key}>
@@ -277,7 +277,7 @@ export default function Upload() {
               </ul>
               {stalled && (
                 <p className="mb-2 rounded-md bg-amber-50 p-2 text-sm text-amber-700">
-                  No progress for 20 seconds. Is the worker running? Start it with: python -m app.worker.main (it keeps the job, so nothing is lost).
+                  Analysis is taking longer than usual. It keeps running in the background, so nothing is lost.
                 </p>
               )}
               {!finished && (

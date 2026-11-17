@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 import { filterQs, useFilters } from "./store";
 import Chart from "./Chart";
+import LoadError from "./LoadError";
 
 type Point = { period: string; reviews: number; low_sample: boolean; avg_rating: number | null; avg_fused_rating: number | null; net_sentiment: number | null };
 type TrendData = { grain: string; points: Point[]; note: string };
@@ -22,7 +23,7 @@ export default function Trends() {
   const a = useQuery({ queryKey: ["alerts"], queryFn: () => api<AlertData>("/alerts") });
 
   if (t.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (t.error || !t.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (t.error || !t.data) return <LoadError />;
   const pts = t.data.points;
   const labels = pts.map((p) => p.period);
 

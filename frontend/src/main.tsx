@@ -14,6 +14,7 @@ import Compare from "./Compare";
 import Explorer from "./Explorer";
 import Upload from "./Upload";
 import Quality from "./Quality";
+import Watchlist from "./Watchlist";
 import Extras from "./Extras";
 import Sentiment from "./Sentiment";
 import Distribution from "./Distribution";
@@ -45,6 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="explorer" element={<Explorer />} />
             <Route path="upload" element={<Upload />} />
             <Route path="quality" element={<Quality />} />
+            <Route path="watchlist" element={<Watchlist />} />
             <Route path="checks" element={<Extras />} />
             <Route path="sentiment" element={<Sentiment />} />
             <Route path="distribution" element={<Distribution />} />

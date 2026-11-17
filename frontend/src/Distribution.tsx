@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "./api";
 import Chart from "./Chart";
 import { filterQs, useFilters } from "./store";
+import LoadError from "./LoadError";
 
 type D = { key: string | number; pos: number; neu: number; neg: number; n: number; pos_share: number; neu_share: number; neg_share: number };
 type Dist = { n: number; low_sample: boolean; overall: D | null; by_star: D[]; by_product: D[]; by_aspect: D[]; by_language: D[]; note: string };
@@ -87,7 +88,7 @@ export default function Distribution() {
   const models = useQuery({ queryKey: ["model-comp", qs], queryFn: () => api<Models>("/model-comparison" + qs) });
 
   if (dist.isLoading || gap.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
-  if (dist.error || gap.error || !dist.data || !gap.data) return <div className="p-8 text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>;
+  if (dist.error || gap.error || !dist.data || !gap.data) return <LoadError />;
   const d = dist.data, g = gap.data;
   if (d.n === 0) {
     return (

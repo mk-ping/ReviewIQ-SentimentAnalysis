@@ -7,6 +7,7 @@ from app.api.actions import router as actions_router
 from app.api.auth import require_user, router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.distribution import router as distribution_router
+from app.api.watchlist import router as watchlist_router
 from app.api.evaluation import router as evaluation_router
 from app.api.extras import router as extras_router
 from app.api.explorer import router as explorer_router
@@ -53,6 +54,7 @@ app.include_router(sentiment_router, dependencies=protected)
 app.include_router(quality_router, dependencies=protected)
 app.include_router(extras_router, dependencies=protected)
 app.include_router(distribution_router, dependencies=protected)
+app.include_router(watchlist_router, dependencies=protected)
 app.include_router(reports_router, dependencies=protected)
 app.include_router(replies_router, dependencies=protected)
 

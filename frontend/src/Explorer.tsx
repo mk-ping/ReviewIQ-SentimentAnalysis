@@ -3,6 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { api, ReviewPage } from "./api";
 import Similar from "./Similar";
 import { useFilters } from "./store";
+import LoadError from "./LoadError";
 
 export default function Explorer() {
   const f = useFilters();
@@ -53,7 +54,7 @@ export default function Explorer() {
       </form>
 
       {res.isLoading && <div className="text-slate-500">Loading...</div>}
-      {res.error && <div className="text-red-600">Could not reach the API. Is uvicorn running on port 8010?</div>}
+      {res.error && <LoadError compact />}
 
       <ul className="space-y-3">
         {items.map((r) => {
