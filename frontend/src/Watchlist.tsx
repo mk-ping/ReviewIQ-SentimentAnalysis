@@ -33,7 +33,7 @@ function Card({ p, open }: { p: WatchItem; open?: boolean }) {
         <span className="w-10 text-2xl font-semibold tabular-nums" style={{ color: TONE[p.level] }}>{p.score}</span>
         <span className="flex-1 font-semibold">{p.product}</span>
         <Badge level={p.level} />
-        {p.low_sample && <span className="text-xs text-amber-500">Few reviews ({p.n})</span>}
+        {p.low_sample && <span className="text-xs text-amber-500">Early read ({p.n} reviews)</span>}
       </summary>
       <p className="mt-3 text-sm text-slate-300">{p.action}</p>
       <div className="mt-3 grid gap-4 md:grid-cols-2">

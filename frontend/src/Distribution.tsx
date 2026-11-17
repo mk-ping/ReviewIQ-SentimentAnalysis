@@ -132,7 +132,7 @@ export default function Distribution() {
         <h1 className="text-2xl font-bold">Who likes what</h1>
         <p className="text-slate-500">
           How many customers are positive, neutral and negative, and how far the stars sit from what the words say.
-          {d.low_sample && <span className="text-amber-700"> Only {d.n} reviews, so treat these as rough.</span>}
+          {d.low_sample && <span className="text-amber-700"> Early read, based on {d.n} reviews.</span>}
         </p>
       </header>
 

@@ -14,7 +14,7 @@ function Card({ title, value, note, warn }: { title: string; value: string; note
       <div className="text-sm text-slate-500">{title}</div>
       <div className="mt-1 text-3xl font-semibold">{value}</div>
       <div className={"mt-1 text-xs " + (warn ? "text-amber-600" : "text-slate-400")}>
-        {warn ? "Warning: small sample. " : ""}{note}
+        {warn ? "Early read. " : ""}{note}
       </div>
     </div>
   );
@@ -99,7 +99,7 @@ export default function Home() {
             {(t.data?.products ?? []).map((p) => (
               <tr key={p.product} className="border-t">
                 <td className="py-1">{p.product}</td><td>{p.n}</td><td>{fmt(p.shown_avg)}</td><td>{fmt(p.true_rating)}</td>
-                <td className="text-slate-500">{p.clear_difference ? "clear difference" : p.low_sample ? "too few reviews" : "no clear difference"}</td>
+                <td className="text-slate-500">{p.clear_difference ? "clear difference" : p.low_sample ? "early read" : "no clear difference"}</td>
               </tr>
             ))}
           </tbody>

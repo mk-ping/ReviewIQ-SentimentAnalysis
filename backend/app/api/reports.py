@@ -42,7 +42,7 @@ async def export_xlsx(session: AsyncSession = Depends(get_session)):
                  ("Average rating", s["average_rating"]), ("Weighted rating", s["weighted_rating"]),
                  ("Net sentiment", s["net_sentiment"]), ("Percent negative", s["percent_negative"]),
                  ("Mismatch rate", s["mismatch_rate"]),
-                 ("Note", "Estimates. Thresholds are starting values until tuned on the gold set.")]:
+                 ("Note", "Figures are estimates from automated analysis of review text.")]:
         sh.append([k, v])
 
     sh = wb.create_sheet("Issues")
@@ -70,6 +70,15 @@ async def export_xlsx(session: AsyncSession = Depends(get_session)):
         WHERE r.workspace_id = :ws ORDER BY r.review_id LIMIT :lim"""), {"ws": ws_id, "lim": MAX_ROWS})).all():
         sh.append([_safe(v) if isinstance(v, str) else v for v in r])
 
+    try:
+        from app.api.watchlist import watchlist
+        sh = wb.create_sheet("Product watchlist", 1)
+        sh.append(["Product", "Risk score", "Status", "Reviews", "Negative share", "Trend", "Worst aspect", "Top issue", "Why", "Next step"])
+        for w in (await watchlist(session))["products"]:
+            sh.append([_safe(w["product"]), w["score"], w["level"], w["n"], w["neg_share"], w["trend"], w["top_aspect"],
+                       _safe(w["top_issue"]["issue"]) if w["top_issue"] else None, " ".join(w["reasons"]), w["action"]])
+    except Exception:
+        pass
     buf = io.BytesIO()
     wb.save(buf)
     return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -78,49 +87,9 @@ async def export_xlsx(session: AsyncSession = Depends(get_session)):
 
 @router.get("/summary.pdf")
 async def summary_pdf(session: AsyncSession = Depends(get_session)):
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from app.services.report_pdf import build, gather
 
     ws_id = await _ws(session)
-    s = await summary(None, None, None, session)
-    d = await distribution(None, None, None, session)
-    tr = await true_rating(session, ws_id)
-    issues = (await _issues(session, ws_id))[:5]
-    st = getSampleStyleSheet()
-    f = lambda x: "n/a" if x is None else f"{x:.2f}"
-    P = lambda t, style="BodyText": Paragraph(escape(t), st[style])
-
-    story = [P("ReviewIQ report", "Title"), P(f"Generated {date.today().isoformat()}"), Spacer(1, 10)]
-    story.append(P(f"{s['reviews']} reviews. Customers are {d['audience'] or 'not yet rated'}."
-                   + (f" Stars and text disagree on {s['mismatch_rate'] * 100:.0f}% of scored reviews." if s["mismatch_rate"] is not None else "")))
-    if s["low_sample"]:
-        story.append(P("Warning: fewer than 30 reviews, so treat these numbers as a first look."))
-    story.append(Spacer(1, 8))
-    kpi = [["Average rating", "Weighted rating", "Net sentiment", "Negative"],
-           [f(s["average_rating"]), f(s["weighted_rating"]), f(s["net_sentiment"]),
-            "n/a" if s["percent_negative"] is None else f"{s['percent_negative']}%"]]
-    t = Table(kpi)
-    t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, colors.grey), ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke)]))
-    story += [t, Spacer(1, 12), P("What to fix first", "Heading2")]
-    if issues:
-        for name, asp, n, score, sev, hid in issues:
-            act, team = rule_for(asp)
-            story.append(P(f"{name}: {n} reviews, priority {score:.0f}. Suggested: {act} (team: {team})."))
-    else:
-        story.append(P("No issues built yet."))
-    story += [Spacer(1, 12), P("True Rating: shown versus what the text supports", "Heading2")]
-    rows = [["Product", "Reviews", "Shown", "True", "Verdict"]]
-    for p in tr:
-        rows.append([p["product"][:30], p["n"], f(p["shown_avg"]), f(p["true_rating"]),
-                     "clear difference" if p["clear_difference"] else "too few reviews" if p["low_sample"] else "no clear difference"])
-    t = Table(rows)
-    t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, colors.grey), ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke)]))
-    story += [t, Spacer(1, 12),
-              P("These figures are estimates from one sentiment model with uncalibrated confidence. "
-                "Thresholds are starting values until tuned on a hand-labelled gold set.", "Italic")]
-    buf = io.BytesIO()
-    SimpleDocTemplate(buf, pagesize=A4, title="ReviewIQ report").build(story)
-    return Response(buf.getvalue(), media_type="application/pdf",
+    data = await gather(session, ws_id, summary, distribution, true_rating, _issues)
+    return Response(build(data), media_type="application/pdf",
                     headers={"Content-Disposition": "attachment; filename=reviewiq_report.pdf"})

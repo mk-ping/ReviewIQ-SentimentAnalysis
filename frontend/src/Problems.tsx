@@ -44,7 +44,7 @@ export default function Problems() {
               Average rating could move from <b>{num(wi.data.current_avg)}</b> to <b>{num(wi.data.estimated_avg)}</b>
               {wi.data.estimated_gain != null && <> (+{num(wi.data.estimated_gain)})</>}, across {wi.data.reviews_affected} affected reviews.
             </p>
-            {wi.data.low_sample && <p className="text-amber-600">Warning: fewer than 30 rated reviews, so this is a rough estimate.</p>}
+            {wi.data.low_sample && <p className="text-amber-600">Early read: based on fewer than 30 rated reviews.</p>}
             <p className="mt-1 text-xs text-slate-400">{wi.data.assumption}</p>
           </div>
         )}
@@ -60,8 +60,8 @@ export default function Problems() {
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-medium">{i.name} <span className="text-slate-400">({i.aspect})</span></span>
                   <span className="text-slate-500">priority {num(i.priority_score, 0)} | {i.reviews} reviews
-                    {i.low_sample && <span className="ml-1 text-amber-600">few reviews</span>}
-                    {i.few_sentences && <span className="ml-1 text-amber-600">few sentences</span>}
+                    {i.low_sample && <span className="ml-1 text-amber-600">early read</span>}
+                    {i.few_sentences && <span className="ml-1 text-amber-600">limited detail</span>}
                     {(i.rare_reviews ?? 0) > 0 && <span className="ml-1 text-slate-500">{i.rare_reviews} rare</span>}
                     {i.hidden_share != null && ` | ${(i.hidden_share * 100).toFixed(0)}% hidden in 4-5 star reviews`}</span>
                 </div>

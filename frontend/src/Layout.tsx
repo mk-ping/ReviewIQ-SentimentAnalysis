@@ -25,8 +25,6 @@ const GROUPS = [
     { to: "/explorer", label: "Review Explorer", icon: "search" },
     { to: "/upload", label: "Data Sources", icon: "upload" },
     { to: "/quality", label: "Data Quality", icon: "check" },
-    { to: "/checks", label: "Model Checks", icon: "bolt" },
-    { to: "/label", label: "Model Evaluation", icon: "tag" },
     { to: "/reports", label: "Reports and Replies", icon: "file" },
   ] },
 ];

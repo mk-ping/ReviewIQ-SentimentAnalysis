@@ -106,7 +106,7 @@ export default function Compare() {
               </thead>
               <tbody>
                 <tr className="border-t"><td className="py-1">Reviews</td>
-                  {prods.map((p) => <td key={p.product}>{p.reviews}{p.low_sample && <span className="ml-2 text-xs text-amber-600">few reviews</span>}</td>)}</tr>
+                  {prods.map((p) => <td key={p.product}>{p.reviews}{p.low_sample && <span className="ml-2 text-xs text-amber-600">early read</span>}</td>)}</tr>
                 <tr className="border-t"><td className="py-1">Average rating</td>{prods.map((p) => <td key={p.product}>{f2(p.avg_rating)}</td>)}</tr>
                 <tr className="border-t"><td className="py-1">Spread (std dev of stars)</td>{prods.map((p) => <td key={p.product}>{f2(p.spread)}</td>)}</tr>
                 <tr className="border-t"><td className="py-1">Net sentiment</td>{prods.map((p) => <td key={p.product}>{f2(p.net_sentiment)}</td>)}</tr>
@@ -136,7 +136,7 @@ export default function Compare() {
                               <span className={"inline-block rounded px-2 py-0.5 " + tone(c?.avg_sentiment)}>
                                 {c ? `${f2(c.avg_sentiment)} (${c.mentions})` : "no mentions"}
                               </span>
-                              {c?.low_sample && <span className="ml-1 text-xs text-amber-600">few</span>}
+                              {c?.low_sample && <span className="ml-1 text-xs text-amber-600">early</span>}
                             </td>
                           );
                         })}

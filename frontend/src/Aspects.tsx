@@ -46,7 +46,7 @@ export default function Aspects() {
           <tbody>
             {[...rows].reverse().map((r) => (
               <tr key={r.aspect} className="border-t">
-                <td className="py-1">{r.aspect}{r.low_sample && <span className="ml-2 text-xs text-amber-600">few mentions</span>}</td>
+                <td className="py-1">{r.aspect}{r.low_sample && <span className="ml-2 text-xs text-amber-600">early read</span>}</td>
                 <td>{r.mentions}</td><td>{r.positive}</td><td>{r.neutral}</td><td>{r.negative}</td><td>{r.avg_sentiment.toFixed(2)}</td>
               </tr>
             ))}
@@ -64,7 +64,7 @@ export default function Aspects() {
         </div>
         {d.data && (
           <>
-            {d.data.low_sample && <p className="mb-2 text-sm text-amber-600">Warning: only {d.data.reviews_in_range} reviews in this range.</p>}
+            {d.data.low_sample && <p className="mb-2 text-sm text-amber-600">Early read: based on {d.data.reviews_in_range} reviews in this range.</p>}
             <table className="w-full text-sm">
               <thead className="text-left text-slate-500"><tr><th>Aspect</th><th>Share of this group</th><th>Share of others</th><th>Avg sentiment</th></tr></thead>
               <tbody>

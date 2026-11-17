@@ -303,7 +303,7 @@ export default function Upload() {
                         {results.hidden.rate != null ? `; ${results.hidden.reviews} of ${results.hidden.rated_4plus_analysed} high-star reviews hide a complaint.` : "."}
                         {results.possible_spam > 0 ? ` ${results.possible_spam} look like spam.` : ""}
                       </p>
-                      {results.low_sample && <p className="text-amber-700">Only {results.reviews} reviews, so treat these numbers as rough.</p>}
+                      {results.low_sample && <p className="text-amber-700">Early read, based on {results.reviews} reviews.</p>}
                       {results.issues.length > 0 && (
                         <>
                           <p className="mt-2 font-medium">Fix first</p>

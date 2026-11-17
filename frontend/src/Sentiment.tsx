@@ -27,7 +27,7 @@ function Detail({ id }: { id: number }) {
         <p>
           Stars average {r.average_rating ?? "-"}; read from the text, {r.text_adjusted_average ?? "-"}.
           Net sentiment {r.net_sentiment ?? "-"}. {r.mismatches} reviews where stars and words disagree.
-          {r.low_sample && <span className="text-amber-700"> Only {r.reviews} reviews, so treat these as rough.</span>}
+          {r.low_sample && <span className="text-amber-700"> Early read, based on {r.reviews} reviews.</span>}
         </p>
       )}
       <div>

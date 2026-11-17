@@ -70,7 +70,7 @@ export default function RatingVsText() {
           Stars and text agree on {pct(d.agreement_rate)} of {d.n} reviews.
           {d.mismatches > 0 && ` ${d.underrated} look under-rated and ${d.overrated} look over-rated.`}
         </p>
-        {d.low_sample && <p className="mt-1 text-sm text-amber-600">Warning: fewer than 30 reviews, so treat these numbers as a first look.</p>}
+        {d.low_sample && <p className="mt-1 text-sm text-amber-600">Early read: based on fewer than 30 reviews.</p>}
       </header>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -122,7 +122,7 @@ export default function RatingVsText() {
             <p className="mb-3 text-sm text-slate-600">
               {hd.data.hidden_reviews} of {hd.data.rated_4plus_analysed} reviews rated 4 or 5 stars still contain a clear complaint
               {hd.data.hidden_rate != null && ` (${pct(hd.data.hidden_rate)})`}.
-              {hd.data.low_sample && " Few reviews analysed so far, so this is a first look."}
+              {hd.data.low_sample && " Early read: based on the reviews analysed so far."}
             </p>
             {hd.data.blind_spots.length > 0 && (
               <table className="mb-4 w-full text-sm">
@@ -130,7 +130,7 @@ export default function RatingVsText() {
                 <tbody>
                   {hd.data.blind_spots.map((b) => (
                     <tr key={b.aspect} className="border-t">
-                      <td className="py-1">{b.aspect}{b.low_sample && <span className="ml-2 text-xs text-amber-600">few reviews</span>}</td>
+                      <td className="py-1">{b.aspect}{b.low_sample && <span className="ml-2 text-xs text-amber-600">early read</span>}</td>
                       <td>{b.negative_mentions}</td><td>{b.in_4_5_star}</td><td>{pct(b.blind_spot_share)}</td>
                     </tr>
                   ))}

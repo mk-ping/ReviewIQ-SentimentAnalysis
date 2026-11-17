@@ -60,7 +60,7 @@ export default function Trends() {
       <header>
         <h1 className="text-2xl font-bold">Is it getting worse?</h1>
         <p className="text-slate-600">{headline}</p>
-        {thin > 0 && <p className="mt-1 text-sm text-amber-600">Warning: {thin} of {pts.length} periods have fewer than 30 reviews, so small swings may be noise.</p>}
+        {thin > 0 && <p className="mt-1 text-sm text-amber-600">Note: {thin} of {pts.length} periods have fewer than 30 reviews, so small swings may be noise.</p>}
       </header>
 
       <section className="rounded-xl bg-white p-4 shadow-sm">
