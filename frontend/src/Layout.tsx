@@ -17,9 +17,9 @@ const GROUPS = [
   { title: "Insights", pages: [
     { to: "/watchlist", label: "Product Watchlist", icon: "alert" },
     { to: "/problems", label: "Problems and Priorities", icon: "alert" },
+    { to: "/tracker", label: "Action Tracker", icon: "check" },
     { to: "/compare", label: "Products and Competitors", icon: "compare" },
     { to: "/trends", label: "Trends and Alerts", icon: "trend" },
-    { to: "/listing", label: "Listing vs Reality", icon: "star" },
   ] },
   { title: "Workspace", pages: [
     { to: "/explorer", label: "Review Explorer", icon: "search" },

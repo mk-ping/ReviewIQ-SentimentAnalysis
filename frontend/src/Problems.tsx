@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { api, send, ActionRow, Issue, Recommendation, WhatIf } from "./api";
 import LoadError from "./LoadError";
 
 const num = (x: number | null | undefined, d = 2) => (x == null ? "n/a" : x.toFixed(d));
-const STATUSES = ["todo", "in_progress", "done", "dropped"];
 
 export default function Problems() {
   const qc = useQueryClient();
@@ -16,10 +16,6 @@ export default function Problems() {
 
   const refresh = () => { qc.invalidateQueries({ queryKey: ["actions"] }); qc.invalidateQueries({ queryKey: ["recs"] }); };
   const create = useMutation({ mutationFn: (issue_id: number) => send("POST", "/actions", { issue_id }), onSuccess: refresh });
-  const patch = useMutation({
-    mutationFn: (v: { id: number; status: string }) => send("PATCH", "/actions/" + v.id, { status: v.status }),
-    onSuccess: refresh,
-  });
 
   if (issues.isLoading) return <div className="p-8 text-slate-500">Loading...</div>;
   if (issues.error || !issues.data) return <LoadError />;
@@ -78,7 +74,7 @@ export default function Problems() {
                     {r.existing_action_id == null ? (
                       <button className="rounded-md bg-indigo-600 px-3 py-1 text-white disabled:opacity-50"
                         disabled={create.isPending} onClick={() => create.mutate(i.issue_id)}>Add to tracker</button>
-                    ) : <span className="text-xs text-emerald-700">In tracker (action {r.existing_action_id})</span>}
+                    ) : <Link to="/tracker" className="text-xs text-emerald-500 hover:underline">In tracker. View status</Link>}
                   </div>
                 )}
               </li>
@@ -89,27 +85,12 @@ export default function Problems() {
         <p className="mt-3 text-xs text-slate-400">{recs.data?.note}</p>
       </section>
 
-      <section className="rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="mb-3 font-semibold">Action tracker</h2>
-        <table className="w-full text-sm">
-          <thead className="text-left text-slate-500"><tr><th>Issue</th><th>Action</th><th>Owner</th><th>Status</th></tr></thead>
-          <tbody>
-            {(acts.data?.actions ?? []).map((a) => (
-              <tr key={a.action_id} className="border-t align-top">
-                <td className="py-1">{a.issue} <span className="text-slate-400">({a.aspect})</span></td>
-                <td>{a.suggested_action}</td><td>{a.owner ?? "-"}</td>
-                <td>
-                  <select className="rounded-md border px-1 py-0.5" value={a.status}
-                    onChange={(e) => patch.mutate({ id: a.action_id, status: e.target.value })}>
-                    {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                  </select>
-                </td>
-              </tr>
-            ))}
-            {(acts.data?.actions ?? []).length === 0 && <tr><td colSpan={4} className="py-2 text-slate-400">No actions yet.</td></tr>}
-          </tbody>
-        </table>
-        <p className="mt-2 text-xs text-slate-400">When an action is marked done, the API compares the issue&apos;s share before and after. That shows association, not proof of cause.</p>
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4 shadow-sm">
+        <div>
+          <h2 className="font-semibold">Action tracker</h2>
+          <p className="text-sm text-slate-500">{(acts.data?.actions ?? []).length} actions, {(acts.data?.actions ?? []).filter((a) => a.status === "todo" || a.status === "in_progress").length} open.</p>
+        </div>
+        <Link to="/tracker" className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700">Open the tracker</Link>
       </section>
     </div>
   );

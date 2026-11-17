@@ -14,11 +14,11 @@ import Compare from "./Compare";
 import Explorer from "./Explorer";
 import Upload from "./Upload";
 import Quality from "./Quality";
+import Tracker from "./Tracker";
 import Watchlist from "./Watchlist";
 import Extras from "./Extras";
 import Sentiment from "./Sentiment";
 import Distribution from "./Distribution";
-import Listing from "./Listing";
 import Label from "./Label";
 import Reports from "./Reports";
 import Trends from "./Trends";
@@ -41,6 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="home" element={<Home />} />
             <Route path="rating-vs-text" element={<RatingVsText />} />
             <Route path="problems" element={<Problems />} />
+            <Route path="tracker" element={<Tracker />} />
             <Route path="aspects" element={<Aspects />} />
             <Route path="compare" element={<Compare />} />
             <Route path="explorer" element={<Explorer />} />
@@ -52,7 +53,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="distribution" element={<Distribution />} />
             <Route path="label" element={<Label />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="listing" element={<Listing />} />
             <Route path="trends" element={<Trends />} />
             <Route path="*" element={<div className="p-8 text-slate-500">This page arrives in a later step.</div>} />
           </Route>

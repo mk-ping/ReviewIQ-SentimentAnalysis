@@ -7,7 +7,7 @@ const FEATURES = [
   { icon: "gap", title: "Stars versus words", body: "Fused stars show where the text disagrees with the rating, and which reviews are under-rated or over-rated." },
   { icon: "layers", title: "Aspect sentiment", body: "Every sentence is tagged with the aspects it talks about, so you see what people love and hate, not only how many." },
   { icon: "alert", title: "Problems, ranked", body: "Complaints are clustered into issues and ranked by how often they appear, how severe they are and whether they are growing." },
-  { icon: "star", title: "Listing versus reality", body: "Compare the rating shown on the listing with the rating the text supports, and find unhappy customers hiding in 4 and 5 star reviews." },
+  { icon: "star", title: "Rating versus text", body: "Compare the rating shown on the listing with the rating the text supports, and find unhappy customers hiding in 4 and 5 star reviews." },
   { icon: "globe", title: "Many languages", body: "English, Spanish, French, German, Italian, Dutch, Hindi and Hinglish are routed to models that handle them." },
 ];
 const STEPS = [
