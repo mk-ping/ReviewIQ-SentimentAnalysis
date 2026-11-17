@@ -36,6 +36,7 @@ async def score_batch(session: AsyncSession, batch_id: int) -> int:
     """Per review: take the predictions of the models in its route group, average them with the group's weights
     (equal weights when the group has fewer than 100 validation reviews), then fuse with the stars."""
     from app.services import sentiment  # imported here so fuse() and ensemble() stay light
+    from app.services import stacker
 
     key_of = {(c["name"], c["version"]): k for k, c in sentiment.registry().items()}
     mkey = {mid: key_of[(n, v)] for mid, n, v in
@@ -69,6 +70,7 @@ async def score_batch(session: AsyncSession, batch_id: int) -> int:
         if any(w is None for w in ws):
             ws = [1.0] * len(keys)
         n, u, p = ensemble([d["preds"][k][:3] for k in keys], ws)
+        n, u, p = stacker.refine(g, {k: d["preds"][k][:3] for k in keys}, (n, u, p))   # learned combination, only when it passed its gate
         expected = d["preds"]["nlptown"][3] if "nlptown" in keys else None
         payload.append({"review_id": rid, **fuse(n, u, p, expected, d["stars"])})
     cols = ["text_label", "confidence", "fused_stars", "pred_stars", "star_gap", "mismatch_type"]

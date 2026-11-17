@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, exists, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,8 +51,16 @@ async def get_mismatches(
 
 
 @router.get("/aspects")
-async def get_aspects(session: AsyncSession = Depends(get_session)):
+async def get_aspects(product: str | None = None, date_from: date | None = None, date_to: date | None = None,
+                      session: AsyncSession = Depends(get_session)):
     ws = await _workspace_id(session)
+    conds = [Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, ReviewAspect.confidence >= T.ASPECT_MIN_CONF]
+    if product:
+        conds.append(Product.name == product)
+    if date_from:
+        conds.append(Review.review_date >= date_from)
+    if date_to:
+        conds.append(Review.review_date <= date_to)
     rows = (
         await session.execute(
             select(
@@ -64,14 +74,23 @@ async def get_aspects(session: AsyncSession = Depends(get_session)):
             .select_from(ReviewAspect)
             .join(Aspect, Aspect.aspect_id == ReviewAspect.aspect_id)
             .join(Review, Review.review_id == ReviewAspect.review_id)
-            .where(Review.workspace_id == ws, Review.spam_score <= T.SPAM_MAX, ReviewAspect.confidence >= T.ASPECT_MIN_CONF)
+            .join(Product, Product.product_id == Review.product_id)
+            .where(*conds)
             .group_by(Aspect.name)
             .order_by(func.count().desc())
         )
     ).all()
+    reviews_matched = await session.scalar(
+        select(func.count(func.distinct(ReviewAspect.review_id)))
+        .select_from(ReviewAspect)
+        .join(Review, Review.review_id == ReviewAspect.review_id)
+        .join(Product, Product.product_id == Review.product_id)
+        .where(*conds)
+    ) or 0
     total = sum(r[1] for r in rows)
     overall = sum(r[1] * float(r[3]) for r in rows) / total if total else 0.0
-    return {"smoothing_m": T.ASPECT_M, "aspects": [
+    return {"product": product, "sentences_matched": total, "reviews_matched": reviews_matched,
+            "smoothing_m": T.ASPECT_M, "aspects": [
         {"aspect": name, "mentions": n, "reviews": nr, "avg_sentiment": round(float(avg), 2),
          "smoothed_sentiment": round(smooth(n, float(avg), overall, T.ASPECT_M), 2),
          "negative": neg, "positive": pos, "neutral": n - neg - pos, "low_sample": n < T.LOW_SAMPLE}
