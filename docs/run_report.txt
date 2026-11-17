@@ -1,0 +1,94 @@
+﻿ReviewIQ run report 2026-11-17 10:21
+
+===== Database is up (exit 0)
+docker : time="2026-11-17T10:21:39+05:30" level=warning msg="Found 
+orphan containers (reviewiq-worker-1, reviewiq-web-1, 
+reviewiq-api-1) for this project. If you removed or renamed this 
+service in your compose file, you can run this command with the 
+--remove-orphans flag to clean it up."
+At C:\Users\Mehak\OneDrive\Documents\project\ReviewIQ\tools\run_ever
+ything.ps1:37 char:25
++ Step 'Database is up' { docker compose up -d db }
++                         ~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (time="2026-11-1...o cl 
+   ean it up.":String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ Container reviewiq_db Running 
+
+
+===== Migrations at head (exit 0)
+python : INFO  [alembic.runtime.migration] Context impl 
+PostgresqlImpl.
+At C:\Users\Mehak\OneDrive\Documents\project\ReviewIQ\tools\run_ever
+ything.ps1:38 char:29
++ Step 'Migrations at head' { python -m alembic upgrade head } 
+'backend ...
++                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (INFO  [alembic....Post 
+   gresqlImpl.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+
+
+===== Offline checks (every tests/check_*.py) (exit 1)
+PASS  check_ablation
+PASS  check_actions
+PASS  check_alerts
+PASS  check_aspects
+PASS  check_auth
+PASS  check_cleaning
+FAIL  check_consistency
+          ~~~~~~~~~~~~~~^^^^^^^
+        File "C:\Users\Mehak\OneDrive\Documents\project\ReviewIQ\bac
+kend\.venv\Lib\site-packages\httpx\_transports\default.py", line 
+118, in map_httpcore_exceptions
+          raise mapped_exc(message) from exc
+      httpx.ConnectError: [WinError 10061] No connection could be 
+made because the target machine actively refused it
+PASS  check_detection
+PASS  check_distribution
+PASS  check_ensemble
+PASS  check_evaluation
+PASS  check_export_csv
+PASS  check_extras
+PASS  check_fusion
+PASS  check_heldout_labels
+PASS  check_hidden_eval
+PASS  check_hidden_mv
+FAIL  check_ingest
+          ~~~~~~~~~~~~~~^^^^^^^
+        File "C:\Users\Mehak\OneDrive\Documents\project\ReviewIQ\bac
+kend\.venv\Lib\site-packages\httpx\_transports\default.py", line 
+118, in map_httpcore_exceptions
+          raise mapped_exc(message) from exc
+      httpx.ConnectError: [WinError 10061] No connection could be 
+made because the target machine actively refused it
+PASS  check_issues
+PASS  check_language
+PASS  check_listing
+PASS  check_llm_mapping
+PASS  check_ownership
+PASS  check_retrain_own
+PASS  check_search
+PASS  check_sentence_aspects
+PASS  check_sentiment
+PASS  check_severe
+PASS  check_smoothing
+PASS  check_tenant
+PASS  check_tiebreak
+PASS  check_tuning
+PASS  check_weights
+
+2 failed
+
+
+
+===== Train the TF-IDF baseline (exit 0)
+ml/data/train.jsonl: 33319 rows
+training rows: 33319   labels: {'neg': 12917, 'neu': 7244, 'pos': 13158}
+sanity check on 10% of the public data: macro F1 0.667, accuracy 0.685
+(this is NOT a reported score; the reported scores come from the held-out reviews in your database)
+saved ..\ml\out\tfidf_lr.joblib
+
