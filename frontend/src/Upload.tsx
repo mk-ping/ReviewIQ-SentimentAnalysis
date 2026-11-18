@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import DataManager from "./DataManager";
 
 const ROLES = ["text", "rating", "date", "product", "title", "helpful", "id", "author"];
 const ROLE_HELP: Record<string, string> = {
@@ -329,6 +330,7 @@ export default function Upload() {
           <button className="mt-4 rounded-md border px-3 py-1 text-sm hover:bg-slate-100" onClick={reset}>Upload another file</button>
         </section>
       )}
+      <DataManager />
     </div>
   );
 }

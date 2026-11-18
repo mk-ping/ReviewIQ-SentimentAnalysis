@@ -38,7 +38,7 @@ export type HiddenData = {
            negative_mentions: { aspect: string; term: string; phrase: string; sentiment: number }[] }[];
 };
 
-export async function send<T>(method: "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
+export async function send<T>(method: "POST" | "PATCH" | "PUT" | "DELETE", path: string, body?: unknown): Promise<T> {
   const r = await fetch("/api" + path, {
     method, headers: { "Content-Type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body),
   });
