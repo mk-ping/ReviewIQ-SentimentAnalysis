@@ -17,12 +17,28 @@ MIN_GAIN = 0.005         # and its cross-validated macro F1 must beat the weight
 _cache: dict = {}
 
 
-def features(members: list[str], probs: dict) -> list[float] | None:
+def meta_features(text: str) -> list[float]:
+    """Eight cheap clues about the kind of text: length, hashtags or mentions, links, exclamations, questions, capitals, numbers, and a social flag."""
+    t = text or ""
+    n = len(t.split())
+    letters = [c for c in t if c.isalpha()]
+    caps = sum(c.isupper() for c in letters) / len(letters) if letters else 0.0
+    social = 1.0 if ("#" in t or "@" in t or n <= 20) else 0.0
+    return [math.log1p(n) / 4, 1.0 if n <= 15 else 0.0, 1.0 if ("#" in t or "@" in t) else 0.0, 1.0 if "http" in t else 0.0,
+            min(t.count("!"), 3) / 3, 1.0 if "?" in t else 0.0, caps, 1.0 if any(c.isdigit() or c in "$%" for c in t) else 0.0, social]
+
+
+def features(members: list[str], probs: dict, text: str | None = None, meta: bool = False) -> list[float] | None:
     row: list[float] = []
     for k in members:
         if k not in probs:
             return None
         row += [math.log(max(float(x), 1e-6)) for x in probs[k][:3]]
+    if meta:
+        if text is None:
+            return None
+        m = meta_features(text)
+        row += m[:-1] + [m[-1] * v for v in row[:]]   # social text gets its own weight on every model
     return row
 
 
@@ -33,8 +49,8 @@ def _softmax(z):
     return tuple(v / s for v in e)
 
 
-def predict(model: dict, probs: dict) -> tuple[float, float, float] | None:
-    x = features(model["members"], probs)
+def predict(model: dict, probs: dict, text: str | None = None) -> tuple[float, float, float] | None:
+    x = features(model["members"], probs, text, bool(model.get("meta")))
     if x is None:
         return None
     return _softmax([sum(w * v for w, v in zip(row, x)) + b for row, b in zip(model["W"], model["b"])])
@@ -58,19 +74,19 @@ def load(group: str, folder: Path | None = None) -> dict | None:
     return _cache[key]
 
 
-def refine(group: str, probs: dict, fallback: tuple, folder: Path | None = None) -> tuple:
+def refine(group: str, probs: dict, fallback: tuple, folder: Path | None = None, text: str | None = None) -> tuple:
     """Production hook: the stacker's probabilities when one is applied and every member model ran, else the fallback."""
     m = load(group, folder)
     if not m:
         return fallback
-    out = predict(m, probs)
+    out = predict(m, probs, text)
     return out if out else fallback
 
 
 GRID = [(C, cw) for C in (0.1, 1.0, 10.0) for cw in (None, "balanced")]
 
 
-def fit(X: list[list[float]], y: list[str], members: list[str], C: float = 1.0, class_weight=None) -> dict | None:
+def fit(X: list[list[float]], y: list[str], members: list[str], C: float = 1.0, class_weight=None, meta: bool = False) -> dict | None:
     from sklearn.linear_model import LogisticRegression
 
     if len(set(y)) < 3:
@@ -78,7 +94,7 @@ def fit(X: list[list[float]], y: list[str], members: list[str], C: float = 1.0, 
     clf = LogisticRegression(max_iter=3000, C=C, class_weight=class_weight).fit(X, y)
     order = [list(clf.classes_).index(c) for c in CLASSES]
     return {"members": members, "classes": list(CLASSES), "W": [clf.coef_[i].tolist() for i in order],
-            "b": [float(clf.intercept_[i]) for i in order], "C": C, "class_weight": class_weight}
+            "b": [float(clf.intercept_[i]) for i in order], "C": C, "class_weight": class_weight, "meta": meta}
 
 
 def cv_labels(X, y, members, folds: int = 5, seed: int = 7, C: float = 1.0, class_weight=None) -> list[str]:

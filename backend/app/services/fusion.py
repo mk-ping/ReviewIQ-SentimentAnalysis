@@ -47,18 +47,18 @@ async def score_batch(session: AsyncSession, batch_id: int) -> int:
             wt[(g, mkey[mid])] = float(w)
     rows = (
         await session.execute(
-            select(Review.review_id, Review.rating_norm, Review.language, Prediction.model_id,
+            select(Review.review_id, Review.rating_norm, Review.language, Review.text_clean, Prediction.model_id,
                    Prediction.p_neg, Prediction.p_neu, Prediction.p_pos, Prediction.expected_stars)
             .join(Prediction, Prediction.review_id == Review.review_id)
             .where(Review.batch_id == batch_id)
         )
     ).all()
     by: dict[int, dict] = {}
-    for rid, st, lang, mid, n, u, p, e in rows:
+    for rid, st, lang, txt, mid, n, u, p, e in rows:
         k = mkey.get(mid)
         if k is None:
             continue
-        d = by.setdefault(rid, {"stars": st, "group": group_of(lang), "preds": {}})
+        d = by.setdefault(rid, {"stars": st, "group": group_of(lang), "text": txt, "preds": {}})
         d["preds"][k] = (n, u, p, e)
     payload = []
     for rid, d in by.items():
@@ -70,7 +70,7 @@ async def score_batch(session: AsyncSession, batch_id: int) -> int:
         if any(w is None for w in ws):
             ws = [1.0] * len(keys)
         n, u, p = ensemble([d["preds"][k][:3] for k in keys], ws)
-        n, u, p = stacker.refine(g, {k: d["preds"][k][:3] for k in keys}, (n, u, p))   # learned combination, only when it passed its gate
+        n, u, p = stacker.refine(g, {k: d["preds"][k][:3] for k in keys}, (n, u, p), text=d["text"])   # learned combination, only when it passed its gate
         expected = d["preds"]["nlptown"][3] if "nlptown" in keys else None
         payload.append({"review_id": rid, **fuse(n, u, p, expected, d["stars"])})
     cols = ["text_label", "confidence", "fused_stars", "pred_stars", "star_gap", "mismatch_type"]
