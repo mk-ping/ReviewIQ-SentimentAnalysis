@@ -11,11 +11,17 @@ DATASETS = [
     ("yelp_polarity", "fancyzhx/yelp_polarity", None, "test", "2", "en", "Restaurant reviews, positive or negative"),
     ("amazon_polarity", "fancyzhx/amazon_polarity", None, "test", "2", "en", "Product reviews, positive or negative"),
     ("financial_news", "zeroshot/twitter-financial-news-sentiment", None, "validation", "3", "en", "Finance tweets, 3 classes"),
+    ("imdb", "stanfordnlp/imdb", None, "test", "2", "en", "Movie reviews, positive or negative"),
+    ("amazon_reviews_en", "SetFit/amazon_reviews_multi_en", None, "test", "5", "en", "Product reviews, 1 to 5 stars turned into negative, neutral, positive"),
+    ("amazon_reviews_es", "SetFit/amazon_reviews_multi_es", None, "test", "5", "es", "Spanish product reviews, stars to 3 classes"),
+    ("amazon_reviews_de", "SetFit/amazon_reviews_multi_de", None, "test", "5", "de", "German product reviews, stars to 3 classes"),
     ("multilingual_hi", "cardiffnlp/tweet_sentiment_multilingual", "hindi", "test", "3", "hi", "Hindi tweets, 3 classes"),
     ("multilingual_es", "cardiffnlp/tweet_sentiment_multilingual", "spanish", "test", "3", "es", "Spanish tweets, 3 classes"),
     ("multilingual_de", "cardiffnlp/tweet_sentiment_multilingual", "german", "test", "3", "de", "German tweets, 3 classes"),
     ("multilingual_fr", "cardiffnlp/tweet_sentiment_multilingual", "french", "test", "3", "fr", "French tweets, 3 classes"),
 ]
+# the genres the models were built for: products, restaurants, movies. Weaker genres stay in the full benchmark.
+FINAL = ["amazon_polarity", "amazon_reviews_en", "yelp_polarity", "imdb", "sst2"]
 TEXT_COLS = ("text", "sentence", "content", "review", "tweet", "headline")
 LABEL_COLS = ("label", "label_text", "sentiment", "labels")
 FALLBACK = {"3": ("neg", "neu", "pos"), "5": ("neg", "neg", "neu", "pos", "pos"), "2": ("neg", "pos")}

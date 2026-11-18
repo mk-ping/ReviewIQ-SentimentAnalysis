@@ -172,7 +172,11 @@ def main() -> None:
             continue
         print(f"loading train split of {spec[0]} ...")
         try:
-            pool[spec[0]] = load_train(spec, a.per_set)
+            got = load_train(spec, a.per_set)
+            if len(got) < 40:
+                print(f"  skipped: only {len(got)} usable rows (labels or columns not recognised)")
+                continue
+            pool[spec[0]] = got
         except Exception as e:
             print(f"  skipped: {type(e).__name__}: {str(e)[:120]}")
     if not pool:
@@ -208,13 +212,15 @@ def main() -> None:
             row = {}
             for src in pool:
                 g = [y for s, t, y in part_b if s == src]
+                if not g:
+                    continue
                 row[src] = M.f_macro(g, tfidf_labels(pipe, [t for s, t, y in part_b if s == src]))
             if val_rows:
                 row["reviews"] = M.f_macro([label_of(r) for r in val_rows], tfidf_labels(pipe, [r["text"] for r in val_rows]))
             rep[name] = row
         for src in rep["current"]:
             print(f"    {src:>16}: macro F1 {rep['current'][src]:.3f} -> {rep['retrained'][src]:.3f}")
-        genres = [s for s in rep["current"] if s != "reviews"]
+        genres = [s for s in rep["current"] if s != "reviews"] or ["reviews"]
         gain = sum(rep["retrained"][s] - rep["current"][s] for s in genres) / len(genres)
         drop = rep["current"].get("reviews", 0) - rep["retrained"].get("reviews", 0)
         if gain > 0.01 and drop <= 0.02:

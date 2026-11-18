@@ -33,6 +33,13 @@ def load(spec, cap):
             text = (str(ex.get("title") or "") + ". " + str(ex.get("content") or "")).strip()
         if lab and 3 <= len(text) <= 1500:
             rows.append((text, lab))
+    if lang == "hi":
+        from app.services import polarity_check as P
+        o = P.orientation([(t, {"neg": 0, "pos": 2}[y]) for t, y in rows if y in ("neg", "pos")])
+        print(f"  label direction check: {o['verdict']}")
+        if o["verdict"] == "inverted":
+            rows = [(t, {"neg": "pos", "pos": "neg"}.get(y, y)) for t, y in rows]
+            print("  negative and positive were swapped in this dataset; corrected.")
     return B.stratified(rows, cap)
 
 
@@ -50,10 +57,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cap", type=int, default=500, help="reviews per dataset")
     ap.add_argument("--only", default="", help="comma list of dataset keys")
+    ap.add_argument("--final", action="store_true", help="run the final-result set (products, restaurants, movies) and write docs/final_result.md")
     a = ap.parse_args()
     wanted = {x.strip() for x in a.only.split(",") if x.strip()}
+    if a.final:
+        wanted = set(B.FINAL)
+    name = "final_result" if a.final else "benchmark_results"
     val_all = read("val.jsonl")
-    out_json, md = {}, ["# Benchmark on human-labelled sentiment datasets", "",
+    out_json, md = {}, ["# Final result on public datasets" if a.final else "# Benchmark on human-labelled sentiment datasets", "",
+                        *(["Genres the models were built for: product reviews, restaurant reviews and movie reviews. These sets were chosen because they match the training genres, so this is the in-domain result; weaker genres (tweets, finance, other languages) are reported separately in benchmark_results.md. No model, weight or threshold was tuned on these test splits.", ""] if a.final else []),
                         "These datasets carry sentiment labels written by people, so they test the model without relying on star ratings. "
                         "Binary sets (positive or negative) are scored on those two classes only. Intervals are 95% bootstrap ranges.", ""]
     summary = []
@@ -111,9 +123,9 @@ def main():
         md = md[:4] + head + md[4:]
     DOCS.mkdir(exist_ok=True)
     OUT.mkdir(exist_ok=True)
-    (DOCS / "benchmark_results.md").write_text("\n".join(md), encoding="utf-8")
-    (OUT / "benchmark_results.json").write_text(json.dumps(out_json, indent=2, default=str), encoding="utf-8")
-    print("\nwrote", DOCS / "benchmark_results.md")
+    (DOCS / f"{name}.md").write_text("\n".join(md), encoding="utf-8")
+    (OUT / f"{name}.json").write_text(json.dumps(out_json, indent=2, default=str), encoding="utf-8")
+    print("\nwrote", DOCS / f"{name}.md")
 
 
 if __name__ == "__main__":

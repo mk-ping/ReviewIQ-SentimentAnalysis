@@ -40,7 +40,7 @@ async def label_queue(source: Literal["gold", "manager"] = "gold", session: Asyn
     row = (await session.execute(text("""
         SELECT r.review_id, p.name, r.rating_norm, r.text_clean, r.language FROM review r
         JOIN product p ON p.product_id = r.product_id
-        WHERE r.workspace_id = :ws AND NOT EXISTS (SELECT 1 FROM gold_label g WHERE g.review_id = r.review_id AND g.source = :src)
+        WHERE r.workspace_id = :ws AND r.spam_score <= 0.69 AND NOT EXISTS (SELECT 1 FROM gold_label g WHERE g.review_id = r.review_id AND g.source = :src)
         ORDER BY md5(r.review_id::text) LIMIT 1"""), a)).first()
     return {"labelled": done, "total": total, "remaining": total - done,
             "item": None if row is None else {"review_id": row[0], "product": row[1], "stars": row[2], "text": row[3], "language": row[4]}}

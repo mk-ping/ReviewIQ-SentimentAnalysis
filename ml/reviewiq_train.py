@@ -133,6 +133,13 @@ def load_tweets(per_lang):
             continue
         rows = [row(norm(ex["text"]), pol=int(ex["label"]), src=f"tweets:{name}", lang=lang)
                 for sp in ds for ex in ds[sp] if keep(norm(ex["text"]))]
+        if lang == "hi":
+            from polarity_fix import orientation, swap
+            o = orientation([(r["text"], r["pol"]) for r in rows])
+            print(f"  tweets/hindi label direction check: {o['verdict']}")
+            if o["verdict"] == "inverted":
+                for r in rows:
+                    r["pol"] = swap(r["pol"])
         random.Random(SEED).shuffle(rows)
         out += rows[:per_lang]
         print(f"  tweets/{name}: {len(rows[:per_lang])} rows")
@@ -166,6 +173,16 @@ def load_hindi(n):
         t = norm(str(ex[tcol]))
         if p is not None and keep(t):
             by[p].append(row(t, pol=p, src="hindi-sentiments", lang="hi"))
+    from polarity_fix import orientation, swap
+    flat = [r for p in range(3) for r in by[p]]
+    o = orientation([(r["text"], r["pol"]) for r in flat])
+    print(f"  hindi-sentiments label direction check: {o['verdict']} (score {o['score']})")
+    if o["verdict"] == "inverted":
+        print("  negative and positive were swapped in this dataset; corrected.")
+        by = defaultdict(list)
+        for r in flat:
+            r["pol"] = swap(r["pol"])
+            by[r["pol"]].append(r)
     out = []
     for p in range(3):
         random.Random(SEED).shuffle(by[p])

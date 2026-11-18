@@ -24,6 +24,7 @@ type Evaluation = {
 
 const f = (x: number | null | undefined, d = 2) => (x == null ? "n/a" : x.toFixed(d));
 const NAMES: Record<string, string> = { neg: "Negative", neu: "Neutral", pos: "Positive" };
+const TARGET = 250;
 
 function Labeller() {
   const qc = useQueryClient();
@@ -42,13 +43,13 @@ function Labeller() {
 
   return (
     <section className="rounded-xl bg-white p-4 shadow-sm">
-      <p className="mb-1 text-sm text-slate-600">{d.labelled} of {d.total} reviews labelled. The plan asks for 300 to 500.</p>
-      <div className="mb-3 h-2 rounded bg-slate-100"><div className="h-2 rounded bg-indigo-600" style={{ width: (d.total ? (100 * d.labelled) / d.total : 0) + "%" }} /></div>
+      <p className="mb-1 text-sm text-slate-600">{d.labelled} of {TARGET} target labels done ({d.total} reviews available). Judge the words only: the stars appear after you choose.</p>
+      <div className="mb-3 h-2 rounded bg-slate-100"><div className="h-2 rounded bg-indigo-600" style={{ width: Math.min(100, (100 * d.labelled) / TARGET) + "%" }} /></div>
       {d.item == null ? (
         <p className="text-slate-500">Every review is labelled.</p>
       ) : (
         <div>
-          <div className="text-xs text-slate-500">{d.item.product} | customer gave {d.item.stars ?? "no"} stars | {d.item.language ?? "?"}</div>
+          <div className="text-xs text-slate-500">{d.item.product} | {d.item.language ?? "?"}{label ? ` | customer gave ${d.item.stars ?? "no"} stars` : " | stars are hidden until you pick a label"}</div>
           <p className="my-3 rounded-md bg-slate-50 p-3 text-sm">{d.item.text}</p>
           <p className="mb-1 text-sm font-medium">What does the text say, ignoring the stars?</p>
           <div className="flex gap-2">
